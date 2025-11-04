@@ -1,22 +1,22 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const productRoutes = require('./routes/productRoutes');
+const db = require('./config/db'); // thay '../db' bằng '../config/db'
+const taiKhoanRoutes = require('./routes/taiKhoanRoutes');
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Route chính
-app.use('/products', productRoutes);
-
-// Route test
+// Route gốc
 app.get('/', (req, res) => {
-  res.send('Backend Node.js + Express + MySQL đang hoạt động!');
+  res.send('API Quản lý lịch khám đang chạy...');
 });
+
+// Route tài khoản
+app.use('/api/taikhoan', taiKhoanRoutes);
 
 // Chạy server
 const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(` Server chạy tại http://localhost:${PORT}`);
+  console.log(`Server chạy tại http://localhost:${PORT}`);
 });
