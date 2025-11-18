@@ -1,0 +1,512 @@
+<div class="doctor-management-page">
+  <!-- Main Content -->
+  <div class="doctor-management-main">
+    <div class="doctor-management-container">
+      
+      <!-- Header with Add Button -->
+      <div class="list-header-section">
+        <div class="list-header-card">
+          <div class="header-row">
+            <h2 class="content-title">Danh Sách Bác Sĩ</h2>
+            <button type="button" class="add-btn" (click)="openAddModal()">
+              <span class="add-icon">+</span>
+              Thêm bác sĩ
+            </button>
+          </div>
+          
+          <!-- Search Section -->
+          <div class="search-section">
+            <div class="search-form">
+              <div class="search-group">
+                <label class="search-label">Tên:</label>
+                <input 
+                  type="text" 
+                  class="search-input" 
+                  [(ngModel)]="searchName" 
+                  (input)="onSearchInputChange()"
+                  placeholder="Tìm theo tên"
+                />
+              </div>
+              <div class="search-group">
+                <label class="search-label">Chuyên Khoa:</label>
+                <select 
+                  class="search-select" 
+                  [(ngModel)]="searchSpecialty"
+                  (change)="onSearch()"
+                  name="searchSpecialty"
+                >
+                  <option value="">Tất cả</option>
+                  <option *ngFor="let specialty of specialties" [value]="specialty">
+                    {{ specialty }}
+                  </option>
+                  <option *ngIf="specialties.length === 0" disabled>Đang tải...</option>
+                </select>
+              </div>
+              <div class="search-group">
+                <label class="search-label">Trạng Thái:</label>
+                <select 
+                  class="search-select" 
+                  [(ngModel)]="searchStatus"
+                  (change)="onSearch()"
+                  name="searchStatus"
+                >
+                  <option value="">Tất cả</option>
+                  <option value="Active">Đang làm việc</option>
+                  <option value="Inactive">Nghỉ phép</option>
+                </select>
+              </div>
+              <button type="button" class="search-btn" (click)="onSearch()">
+                Tìm Kiếm
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doctor List Table -->
+      <div class="doctor-list-section">
+        <div class="content-card">
+          <div class="table-container">
+            <table class="doctor-table">
+              <thead>
+                <tr>
+                  <th class="text-center">STT</th>
+                  <th class="text-left">Họ tên</th>
+                  <th class="text-left">Giới tính</th>
+                  <th class="text-left">Ngày sinh</th>
+                  <th class="text-left">Chuyên khoa</th>
+                  <th class="text-left">Số điện thoại</th>
+                  <th class="text-left">Email</th>
+                  <th class="text-left">Địa chỉ</th>
+                  <th class="text-center">Trạng thái</th>
+                  <th class="text-center">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="isLoading">
+                  <td colspan="10" class="empty-message">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+                <tr *ngIf="!isLoading && paginatedDoctors.length === 0">
+                  <td colspan="10" class="empty-message">
+                    Không tìm thấy bác sĩ nào.
+                  </td>
+                </tr>
+                <tr *ngFor="let doctor of paginatedDoctors; let i = index">
+                  <td class="text-center">{{ (currentPage - 1) * itemsPerPage + i + 1 }}</td>
+                  <td class="text-left">{{ doctor.fullName }}</td>
+                  <td class="text-left">{{ doctor.gender || '-' }}</td>
+                  <td class="text-left">{{ doctor.dateOfBirth || '-' }}</td>
+                  <td class="text-left">{{ doctor.specialty || '-' }}</td>
+                  <td class="text-left">{{ doctor.phoneNumber || '-' }}</td>
+                  <td class="text-left">{{ doctor.email || '-' }}</td>
+                  <td class="text-left">{{ doctor.address || '-' }}</td>
+                  <td class="text-center">
+                    <span 
+                      [ngClass]="{
+                        'status-badge': true,
+                        'status-active': doctor.status === 'Active',
+                        'status-inactive': doctor.status === 'Inactive'
+                      }"
+                    >
+                      {{ doctor.status === 'Active' ? 'Đang làm việc' : 'Nghỉ phép' }}
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    <div class="action-buttons">
+                      <button 
+                        class="action-btn view-btn" 
+                        (click)="viewDoctorDetails(doctor)"
+                        title="Xem chi tiết"
+                      >
+                        Chi tiết
+                      </button>
+                      <button 
+                        class="action-btn update-btn" 
+                        (click)="selectDoctorForUpdate(doctor)"
+                        title="Cập nhật"
+                      >
+                        Cập nhật
+                      </button>
+                      <button 
+                        class="action-btn toggle-btn" 
+                        style="display:none"
+                      ></button>
+                      <button 
+                        class="action-btn delete-btn" 
+                        (click)="deleteDoctor(doctor)"
+                        title="Xóa"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination-section" *ngIf="totalPages > 1">
+            <div class="pagination">
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                (click)="goToPage(currentPage - 1)" 
+                [disabled]="currentPage === 1"
+              >
+                &lt;&lt;
+              </button>
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                *ngFor="let page of getPageNumbers()" 
+                [class.active]="page === currentPage"
+                (click)="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                (click)="goToPage(currentPage + 1)" 
+                [disabled]="currentPage === totalPages"
+              >
+                &gt;&gt;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Add Doctor Modal -->
+  <div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Nhập thông tin bác sĩ</h2>
+        <button class="modal-close" (click)="closeAddModal()">×</button>
+      </div>
+      
+      <form class="doctor-form" (ngSubmit)="addDoctor()">
+        <!-- Doctor Information -->
+        <div class="form-section">
+          <h3 class="section-title">Thông tin bác sĩ</h3>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">Họ và tên: <span class="required">*</span></label>
+              <input 
+                type="text" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.fullName" 
+                name="fullName"
+                placeholder="Nhập họ và tên"
+                required
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Giới tính:</label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="doctorForm.gender" 
+                name="gender"
+              >
+                <option value="">Chọn giới tính</option>
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Ngày sinh:</label>
+              <input 
+                type="date" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.dateOfBirth" 
+                name="dateOfBirth"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Khoa: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="doctorForm.departmentId" 
+                name="departmentId"
+                required
+              >
+                <option [value]="undefined" disabled selected>Chọn khoa</option>
+                <option *ngFor="let dept of departments" [value]="dept.id">
+                  {{ dept.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Chuyên môn:</label>
+              <input 
+                type="text" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.specialty" 
+                name="specialty"
+                placeholder="VD: Tim mạch, Nhi khoa..."
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Số điện thoại:</label>
+              <input 
+                type="tel" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.phoneNumber" 
+                name="phoneNumber"
+                placeholder="VD: 0912345678"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">CCCD/CMND:</label>
+              <input 
+                type="text" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.certification" 
+                name="certification"
+                placeholder="VD: 012345678901"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Địa chỉ:</label>
+              <input 
+                type="text" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.address" 
+                name="address"
+                placeholder="VD: Quy Nhơn, Bình Định"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Email:</label>
+              <input 
+                type="email" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.email" 
+                name="email"
+                placeholder="VD: bacsi@hospital.vn"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Trạng thái:</label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="doctorForm.status" 
+                name="status"
+              >
+                <option value="Active">Đang làm việc</option>
+                <option value="Inactive">Nghỉ phép</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="action-btn cancel-btn" (click)="closeAddModal()">Hủy</button>
+          <button type="submit" class="action-btn save-btn">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Update Doctor Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateModal" (click)="closeUpdateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Nhập thông tin bác sĩ cần cập nhật</h2>
+        <button class="modal-close" (click)="closeUpdateModal()">×</button>
+      </div>
+      
+      <form class="doctor-form" (ngSubmit)="updateDoctor()">
+        <!-- Doctor Information -->
+        <div class="form-section">
+          <h3 class="section-title">Thông tin bác sĩ</h3>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">Họ và tên: <span class="required">*</span></label>
+              <input 
+                type="text" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.fullName" 
+                name="fullName"
+                required
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Giới tính:</label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="doctorForm.gender" 
+                name="gender"
+              >
+                <option value="">Chọn giới tính</option>
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Ngày sinh:</label>
+              <input 
+                type="date" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.dateOfBirth" 
+                name="dateOfBirth"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Khoa: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="doctorForm.departmentId" 
+                name="departmentId"
+                required
+              >
+                <option [value]="undefined" disabled selected>Chọn khoa</option>
+                <option *ngFor="let dept of departments" [value]="dept.id">
+                  {{ dept.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Chuyên môn:</label>
+              <input 
+                type="text" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.specialty" 
+                name="specialty"
+                placeholder="VD: Tim mạch, Nhi khoa..."
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Số điện thoại:</label>
+              <input 
+                type="tel" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.phoneNumber" 
+                name="phoneNumber"
+                placeholder="VD: 0912345678"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">CCCD/CMND:</label>
+              <input 
+                type="text" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.certification" 
+                name="certification"
+                placeholder="VD: 012345678901"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Địa chỉ:</label>
+              <input 
+                type="text" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.address" 
+                name="address"
+                placeholder="VD: Quy Nhơn, Bình Định"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Email:</label>
+              <input 
+                type="email" 
+                class="form-input" 
+                [(ngModel)]="doctorForm.email" 
+                name="email"
+                placeholder="VD: bacsi@hospital.vn"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Trạng thái:</label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="doctorForm.status" 
+                name="statusUpdate"
+              >
+                <option value="Active">Đang làm việc</option>
+                <option value="Inactive">Nghỉ phép</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="action-btn delete-btn" (click)="deleteDoctor(selectedDoctor)" [disabled]="!selectedDoctor">
+            Xóa
+          </button>
+          <button type="button" class="action-btn cancel-btn" (click)="closeUpdateModal()">Hủy</button>
+          <button type="submit" class="action-btn update-btn" [disabled]="!selectedDoctor">Cập nhật</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail Doctor Modal -->
+  <div class="modal-overlay" *ngIf="showDetailModal" (click)="closeDetailModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Thông Tin Chi Tiết Bác Sĩ</h3>
+        <button type="button" class="modal-close" (click)="closeDetailModal()">&times;</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedDoctor">
+        <div class="detail-info">
+          <div class="detail-row" *ngIf="selectedDoctor.fullName">
+            <div class="detail-label">Họ tên:</div>
+            <div class="detail-value">{{ selectedDoctor.fullName }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedDoctor.gender">
+            <div class="detail-label">Giới tính:</div>
+            <div class="detail-value">{{ selectedDoctor.gender }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedDoctor.dateOfBirth">
+            <div class="detail-label">Ngày sinh:</div>
+            <div class="detail-value">{{ selectedDoctor.dateOfBirth }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedDoctor.specialty">
+            <div class="detail-label">Chuyên môn:</div>
+            <div class="detail-value">{{ selectedDoctor.specialty }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedDoctor.phoneNumber">
+            <div class="detail-label">Số điện thoại:</div>
+            <div class="detail-value">{{ selectedDoctor.phoneNumber }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedDoctor.certification">
+            <div class="detail-label">CCCD/CMND:</div>
+            <div class="detail-value">{{ selectedDoctor.certification }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedDoctor.address">
+            <div class="detail-label">Địa chỉ:</div>
+            <div class="detail-value">{{ selectedDoctor.address }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedDoctor.email">
+            <div class="detail-label">Email:</div>
+            <div class="detail-value">{{ selectedDoctor.email }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedDoctor.status">
+            <div class="detail-label">Trạng thái:</div>
+            <div class="detail-value">
+              <span 
+                [ngClass]="{
+                  'status-badge': true,
+                  'status-active': selectedDoctor.status === 'Active',
+                  'status-inactive': selectedDoctor.status === 'Inactive'
+                }"
+              >
+                {{ selectedDoctor.status === 'Active' ? 'Đang làm việc' : 'Nghỉ phép' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="closeDetailModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
