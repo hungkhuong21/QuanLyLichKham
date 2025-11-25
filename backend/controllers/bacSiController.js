@@ -93,3 +93,38 @@ exports.getTotalInactive = (req, res) => {
     });
   });
 };
+<<<<<<< HEAD
+=======
+
+// Tìm kiếm bác sĩ
+exports.searchBacSi = (req, res) => {
+  const searchParams = {
+    HoTen: req.query.HoTen || req.query.name,
+    ChuyenMon: req.query.ChuyenMon || req.query.specialty,
+    MaKhoa: req.query.MaKhoa || req.query.departmentId,
+    TrangThai: req.query.TrangThai || req.query.status,
+    SoDienThoai: req.query.SoDienThoai || req.query.phoneNumber || req.query.phone,
+    Email: req.query.Email || req.query.email
+  };
+
+  // Loại bỏ các tham số rỗng
+  Object.keys(searchParams).forEach(key => {
+    if (!searchParams[key]) {
+      delete searchParams[key];
+    }
+  });
+
+  // Chuyển đổi MaKhoa sang số nếu có
+  if (searchParams.MaKhoa) {
+    searchParams.MaKhoa = parseInt(searchParams.MaKhoa);
+    if (isNaN(searchParams.MaKhoa)) {
+      delete searchParams.MaKhoa;
+    }
+  }
+
+  BacSi.search(searchParams, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Lỗi tìm kiếm bác sĩ', details: err });
+    res.json(results);
+  });
+};
+>>>>>>> b4b6cfeb909f213e1a81c974526a9106ae793471

@@ -64,3 +64,52 @@ exports.countActive = (callback) => {
 exports.countInactive = (callback) => {
   db.query('SELECT COUNT(*) AS total FROM bacsi WHERE TrangThai = "Inactive"', callback);
 };
+<<<<<<< HEAD
+=======
+
+// Tìm kiếm bác sĩ
+exports.search = (searchParams, callback) => {
+  let sql = 'SELECT * FROM bacsi WHERE 1=1';
+  const params = [];
+
+  // Tìm kiếm theo tên
+  if (searchParams.HoTen) {
+    sql += ' AND HoTen LIKE ?';
+    params.push(`%${searchParams.HoTen}%`);
+  }
+
+  // Tìm kiếm theo chuyên môn
+  if (searchParams.ChuyenMon) {
+    sql += ' AND ChuyenMon LIKE ?';
+    params.push(`%${searchParams.ChuyenMon}%`);
+  }
+
+  // Tìm kiếm theo khoa
+  if (searchParams.MaKhoa) {
+    sql += ' AND MaKhoa = ?';
+    params.push(searchParams.MaKhoa);
+  }
+
+  // Tìm kiếm theo trạng thái
+  if (searchParams.TrangThai) {
+    sql += ' AND TrangThai = ?';
+    params.push(searchParams.TrangThai);
+  }
+
+  // Tìm kiếm theo số điện thoại
+  if (searchParams.SoDienThoai) {
+    sql += ' AND SoDienThoai LIKE ?';
+    params.push(`%${searchParams.SoDienThoai}%`);
+  }
+
+  // Tìm kiếm theo email
+  if (searchParams.Email) {
+    sql += ' AND Email LIKE ?';
+    params.push(`%${searchParams.Email}%`);
+  }
+
+  sql += ' ORDER BY MaBacSi DESC';
+
+  db.query(sql, params, callback);
+};
+>>>>>>> b4b6cfeb909f213e1a81c974526a9106ae793471

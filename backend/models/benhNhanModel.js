@@ -48,3 +48,46 @@ exports.update = (id, data, callback) => {
 exports.delete = (id, callback) => {
   db.query('DELETE FROM benhnhan WHERE MaBenhNhan = ?', [id], callback);
 };
+<<<<<<< HEAD
+=======
+
+// Tìm kiếm bệnh nhân
+exports.search = (searchParams, callback) => {
+  let sql = 'SELECT * FROM benhnhan WHERE 1=1';
+  const params = [];
+
+  // Tìm kiếm theo tên
+  if (searchParams.HoTen) {
+    sql += ' AND HoTen LIKE ?';
+    params.push(`%${searchParams.HoTen}%`);
+  }
+
+  // Tìm kiếm theo số điện thoại
+  if (searchParams.SoDienThoai) {
+    sql += ' AND SoDienThoai LIKE ?';
+    params.push(`%${searchParams.SoDienThoai}%`);
+  }
+
+  // Tìm kiếm theo CMND/CCCD
+  if (searchParams.CMND_CCCD) {
+    sql += ' AND CMND_CCCD LIKE ?';
+    params.push(`%${searchParams.CMND_CCCD}%`);
+  }
+
+  // Tìm kiếm theo giới tính
+  if (searchParams.GioiTinh) {
+    sql += ' AND GioiTinh = ?';
+    params.push(searchParams.GioiTinh);
+  }
+
+  // Tìm kiếm theo địa chỉ
+  if (searchParams.DiaChi) {
+    sql += ' AND DiaChi LIKE ?';
+    params.push(`%${searchParams.DiaChi}%`);
+  }
+
+  sql += ' ORDER BY MaBenhNhan DESC';
+
+  db.query(sql, params, callback);
+};
+>>>>>>> b4b6cfeb909f213e1a81c974526a9106ae793471
