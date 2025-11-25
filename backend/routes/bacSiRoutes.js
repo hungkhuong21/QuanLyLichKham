@@ -3,7 +3,10 @@ const express = require('express');
 const router = express.Router();
 const bacSiController = require('../controllers/bacSiController');
 
+<<<<<<< HEAD
+=======
 router.get('/search', bacSiController.searchBacSi);
+>>>>>>> b4b6cfeb909f213e1a81c974526a9106ae793471
 router.get('/', bacSiController.getAllBacSi);
 router.get('/:id', bacSiController.getBacSiById);
 router.post('/', bacSiController.createBacSi);

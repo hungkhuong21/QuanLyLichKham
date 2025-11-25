@@ -48,6 +48,8 @@ exports.update = (id, data, callback) => {
 exports.delete = (id, callback) => {
   db.query('DELETE FROM benhnhan WHERE MaBenhNhan = ?', [id], callback);
 };
+<<<<<<< HEAD
+=======
 
 // Tìm kiếm bệnh nhân
 exports.search = (searchParams, callback) => {
@@ -88,3 +90,4 @@ exports.search = (searchParams, callback) => {
 
   db.query(sql, params, callback);
 };
+>>>>>>> b4b6cfeb909f213e1a81c974526a9106ae793471
