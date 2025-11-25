@@ -19,12 +19,68 @@ exports.getTaiKhoanById = (req, res) => {
   });
 };
 
+// Hàm kiểm tra email hợp lệ
+function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  // Regex pattern để kiểm tra email hợp lệ
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim());
+}
+
 // Thêm mới tài khoản
 exports.createTaiKhoan = (req, res) => {
-  const data = req.body;
-  TaiKhoan.create(data, (err, result) => {
-    if (err) return res.status(500).json({ error: 'Lỗi tạo tài khoản' });
-    res.json({ message: 'Tạo tài khoản thành công', MaTK: result.insertId });
+  const { TenDangNhap, MatKhau, VaiTroID, LoaiNguoiDung, MaNguoiDung } = req.body || {};
+  
+  // Kiểm tra các trường bắt buộc
+  if (!TenDangNhap) {
+    return res.status(400).json({ error: 'Vui lòng nhập email' });
+  }
+  
+  if (!MatKhau) {
+    return res.status(400).json({ error: 'Vui lòng nhập mật khẩu' });
+  }
+  
+  // Kiểm tra email hợp lệ
+  if (!isValidEmail(TenDangNhap)) {
+    return res.status(400).json({ error: 'Email không hợp lệ. Vui lòng nhập đúng định dạng email (ví dụ: example@gmail.com)' });
+  }
+  
+  // Kiểm tra độ dài mật khẩu (tối thiểu 6 ký tự)
+  if (MatKhau.length < 6) {
+    return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
+  }
+  
+  // Kiểm tra email đã tồn tại chưa
+  TaiKhoan.findByTenDangNhap(TenDangNhap.trim(), (err, results) => {
+    if (err) {
+      console.error('Lỗi kiểm tra email:', err);
+      return res.status(500).json({ error: 'Lỗi kiểm tra email' });
+    }
+    
+    if (results && results.length > 0) {
+      return res.status(409).json({ error: 'Email này đã được sử dụng. Vui lòng chọn email khác' });
+    }
+    
+    // Nếu email chưa tồn tại, tạo tài khoản mới
+    const data = {
+      TenDangNhap: TenDangNhap.trim(),
+      MatKhau,
+      VaiTroID,
+      LoaiNguoiDung,
+      MaNguoiDung
+    };
+    
+    TaiKhoan.create(data, (err2, result) => {
+      if (err2) {
+        console.error('Lỗi tạo tài khoản:', err2);
+        // Kiểm tra lỗi duplicate key từ database
+        if (err2.code === 'ER_DUP_ENTRY') {
+          return res.status(409).json({ error: 'Email này đã được sử dụng' });
+        }
+        return res.status(500).json({ error: 'Lỗi tạo tài khoản', details: err2.message });
+      }
+      res.json({ message: 'Tạo tài khoản thành công', MaTK: result.insertId });
+    });
   });
 };
 
