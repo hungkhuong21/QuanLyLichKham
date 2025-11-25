@@ -1,0 +1,328 @@
+<div class="user-management-page">
+  <!-- Main Content -->
+  <div class="user-management-main">
+    <div class="user-management-container">
+      
+      <!-- Header with Add Button -->
+      <div class="list-header-section">
+        <div class="list-header-card">
+          <div class="header-row">
+            <h2 class="content-title">Danh Sách Tài Khoản</h2>
+            <button type="button" class="add-btn" (click)="openAddModal()">
+              <span class="add-icon">+</span>
+              Thêm tài khoản
+            </button>
+          </div>
+          
+          <!-- Search Section -->
+          <div class="search-section">
+            <div class="search-form">
+              <div class="search-group">
+                <label class="search-label">Tìm kiếm:</label>
+                <input 
+                  type="text" 
+                  class="search-input" 
+                  [(ngModel)]="searchText" 
+                  (input)="onSearch()"
+                  placeholder="Tìm theo tên đăng nhập, email, vai trò..."
+                />
+              </div>
+              <button type="button" class="search-btn" (click)="onSearch()">
+                Tìm Kiếm
+              </button>
+            </div>
+          </div>
+    </div>
+      </div>
+
+      <!-- User List Table -->
+      <div class="user-list-section">
+        <div class="content-card">
+          <div class="table-container">
+            <table class="user-table">
+        <thead>
+                <tr>
+                  <th class="text-center">STT</th>
+                  <th class="text-left">Tên đăng nhập</th>
+                  <th class="text-left">Email</th>
+                  <th class="text-left">Vai trò</th>
+                  <th class="text-left">Loại người dùng</th>
+                  <th class="text-left">Ngày tạo</th>
+                  <th class="text-center">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+                <tr *ngIf="isLoading">
+                  <td colspan="7" class="empty-message">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+                <tr *ngIf="!isLoading && paginatedUsers.length === 0">
+                  <td colspan="7" class="empty-message">
+                    Không tìm thấy tài khoản nào.
+                  </td>
+                </tr>
+                <tr *ngFor="let user of paginatedUsers; let i = index">
+                  <td class="text-center">{{ (currentPage - 1) * itemsPerPage + i + 1 }}</td>
+                  <td class="text-left">{{ user.username || '-' }}</td>
+                  <td class="text-left">{{ user.email || '-' }}</td>
+                  <td class="text-left">{{ user.role || '-' }}</td>
+                  <td class="text-left">{{ user.loaiNguoiDung || '-' }}</td>
+                  <td class="text-left">{{ formatDate(user.ngayTao) }}</td>
+                  <td class="text-center">
+              <div class="action-buttons">
+                      <button 
+                        class="action-btn view-btn" 
+                        (click)="viewUserDetails(user)"
+                        title="Xem chi tiết"
+                      >
+                        Chi tiết
+                      </button>
+                      <button 
+                        class="action-btn update-btn" 
+                        (click)="openUpdateModal(user)"
+                        title="Cập nhật"
+                      >
+                        Cập nhật
+                      </button>
+                      <button 
+                        class="action-btn delete-btn" 
+                        (click)="deleteUser(user)"
+                        title="Xóa"
+                      >
+                        Xóa
+                      </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination-section" *ngIf="totalPages > 1">
+            <div class="pagination">
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                (click)="goToPage(currentPage - 1)" 
+                [disabled]="currentPage === 1"
+              >
+                &lt;&lt;
+              </button>
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                *ngFor="let page of getPageNumbers()" 
+                [class.active]="page === currentPage"
+                (click)="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                (click)="goToPage(currentPage + 1)" 
+                [disabled]="currentPage === totalPages"
+              >
+                &gt;&gt;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Add User Modal -->
+  <div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Thêm tài khoản mới</h2>
+        <button class="modal-close" (click)="closeAddModal()">×</button>
+      </div>
+      
+      <form class="user-form" (ngSubmit)="addUser()">
+        <div class="form-section">
+          <h3 class="section-title">Thông tin tài khoản</h3>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">Tên đăng nhập/Email: <span class="required">*</span></label>
+              <input 
+                type="text" 
+                class="form-input" 
+                [(ngModel)]="userForm.username" 
+                (input)="onUsernameChange()"
+                name="username"
+                placeholder="VD: user@example.com"
+                required
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Mật khẩu: <span class="required">*</span></label>
+              <input 
+                type="password" 
+                class="form-input" 
+                [(ngModel)]="userForm.password" 
+                name="password"
+                placeholder="Nhập mật khẩu"
+                required
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Vai trò: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="userForm.vaiTroID" 
+                name="vaiTroID"
+                (change)="onRoleChange()"
+                required
+              >
+                <option *ngFor="let role of roles" [value]="role.id">
+                  {{ role.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Loại người dùng: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="userForm.loaiNguoiDung" 
+                name="loaiNguoiDung"
+                required
+              >
+                <option value="BenhNhan">Bệnh nhân</option>
+                <option value="BacSi">Bác sĩ</option>
+                <option value="NhanVien">Nhân viên</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="action-btn cancel-btn" (click)="closeAddModal()">Hủy</button>
+          <button type="submit" class="action-btn save-btn">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Update User Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateModal" (click)="closeUpdateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Cập nhật tài khoản</h2>
+        <button class="modal-close" (click)="closeUpdateModal()">×</button>
+      </div>
+      
+      <form class="user-form" (ngSubmit)="updateUser()">
+        <div class="form-section">
+          <h3 class="section-title">Thông tin tài khoản</h3>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">Tên đăng nhập/Email: <span class="required">*</span></label>
+              <input 
+                type="text" 
+                class="form-input" 
+                [(ngModel)]="userForm.username" 
+                name="username"
+                required
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Mật khẩu mới (để trống nếu không đổi):</label>
+              <input 
+                type="password" 
+                class="form-input" 
+                [(ngModel)]="userForm.password" 
+                name="password"
+                placeholder="Nhập mật khẩu mới (nếu cần)"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Vai trò: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="userForm.vaiTroID" 
+                name="vaiTroID"
+                (change)="onRoleChange()"
+                required
+              >
+                <option *ngFor="let role of roles" [value]="role.id">
+                  {{ role.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Loại người dùng: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="userForm.loaiNguoiDung" 
+                name="loaiNguoiDung"
+                required
+              >
+                <option value="BenhNhan">Bệnh nhân</option>
+                <option value="BacSi">Bác sĩ</option>
+                <option value="NhanVien">Nhân viên</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="action-btn delete-btn" (click)="deleteUser(selectedUser)" [disabled]="!selectedUser">
+            Xóa
+          </button>
+          <button type="button" class="action-btn cancel-btn" (click)="closeUpdateModal()">Hủy</button>
+          <button type="submit" class="action-btn update-btn" [disabled]="!selectedUser">Cập nhật</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail User Modal -->
+  <div class="modal-overlay" *ngIf="showDetailModal" (click)="closeDetailModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Thông Tin Chi Tiết Tài Khoản</h3>
+        <button type="button" class="modal-close" (click)="closeDetailModal()">&times;</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedUser">
+        <div class="detail-info">
+          <div class="detail-row" *ngIf="selectedUser.id">
+            <div class="detail-label">Mã tài khoản:</div>
+            <div class="detail-value">{{ selectedUser.id }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedUser.username">
+            <div class="detail-label">Tên đăng nhập:</div>
+            <div class="detail-value">{{ selectedUser.username }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedUser.email">
+            <div class="detail-label">Email:</div>
+            <div class="detail-value">{{ selectedUser.email }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedUser.role">
+            <div class="detail-label">Vai trò:</div>
+            <div class="detail-value">{{ selectedUser.role }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedUser.loaiNguoiDung">
+            <div class="detail-label">Loại người dùng:</div>
+            <div class="detail-value">{{ selectedUser.loaiNguoiDung }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedUser.ngayTao">
+            <div class="detail-label">Ngày tạo:</div>
+            <div class="detail-value">{{ formatDate(selectedUser.ngayTao) }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedUser.ngayCapNhat">
+            <div class="detail-label">Ngày cập nhật:</div>
+            <div class="detail-value">{{ formatDate(selectedUser.ngayCapNhat) }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="closeDetailModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
