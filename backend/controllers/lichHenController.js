@@ -611,3 +611,49 @@ exports.updateLichHen = (req, res) => {
   });
 };
 
+// Xóa lịch hẹn
+exports.deleteLichHen = (req, res) => {
+  const { id } = req.params;
+
+  // Kiểm tra lịch hẹn có tồn tại không
+  LichHen.getById(id, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Lỗi truy vấn', details: err });
+    if (!results || results.length === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy lịch hẹn' });
+    }
+
+    // Xóa tiếp nhận liên quan (nếu có)
+    TiepNhanModel.getByMaLichHen(id, (err2, tiepNhanResults) => {
+      if (err2) {
+        return deleteLichHenOnly();
+      }
+
+      if (tiepNhanResults && tiepNhanResults.length > 0) {
+        const deletePromises = tiepNhanResults.map(tn => {
+          return new Promise((resolve, reject) => {
+            TiepNhanModel.delete(tn.MaTiepNhan, (err3) => {
+              if (err3) reject(err3);
+              else resolve();
+            });
+          });
+        });
+
+        Promise.all(deletePromises)
+          .then(() => deleteLichHenOnly())
+          .catch(() => deleteLichHenOnly());
+      } else {
+        deleteLichHenOnly();
+      }
+    });
+
+    function deleteLichHenOnly() {
+      LichHen.delete(id, (err3, result) => {
+        if (err3) return res.status(500).json({ error: 'Lỗi xóa lịch hẹn', details: err3 });
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ message: 'Không tìm thấy lịch hẹn' });
+        }
+        res.json({ message: 'Xóa lịch hẹn thành công' });
+      });
+    }
+  });
+};
