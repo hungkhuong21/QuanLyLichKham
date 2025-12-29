@@ -12,6 +12,63 @@ exports.create = (data, callback) => {
   ], callback);
 };
 
+// Helper function: Tính toán date range cho filter
+const getDateRange = (filter) => {
+  if (!filter || filter === 'Tất cả' || filter === 'all') {
+    return null; // Không filter
+  }
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const nextDay = new Date(tomorrow);
+  nextDay.setDate(nextDay.getDate() + 1);
+
+  // Tính tuần này: từ thứ 2 đến chủ nhật
+  const currentDay = now.getDay(); // 0 = Chủ nhật, 1 = Thứ 2, ...
+  const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1; // Chuyển Chủ nhật thành 6
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - daysFromMonday);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  // Tính tháng này
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  switch (filter) {
+    case 'Hôm nay':
+    case 'today':
+      return {
+        start: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')} 00:00:00`,
+        end: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')} 23:59:59`
+      };
+    case 'Ngày mai':
+    case 'tomorrow':
+      return {
+        start: `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')} 00:00:00`,
+        end: `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')} 23:59:59`
+      };
+    case 'Tuần này':
+    case 'this week':
+    case 'week':
+      return {
+        start: `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(weekStart.getDate()).padStart(2, '0')} 00:00:00`,
+        end: `${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, '0')}-${String(weekEnd.getDate()).padStart(2, '0')} 23:59:59`
+      };
+    case 'Tháng này':
+    case 'this month':
+    case 'month':
+      return {
+        start: `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}-${String(monthStart.getDate()).padStart(2, '0')} 00:00:00`,
+        end: `${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')} 00:00:00`
+      };
+    default:
+      return null;
+  }
+};
+
 // Helper function: Format datetime từ MySQL Date object sang string YYYY-MM-DD HH:mm:ss
 // MySQL lưu datetime là local time, không phải UTC
 const formatDateTime = (date) => {
@@ -59,8 +116,15 @@ const formatDateTime = (date) => {
 };
 
 // Lấy tất cả lịch hẹn
-exports.getAll = (callback) => {
-  const sql = `
+exports.getAll = (filter, callback) => {
+  // Nếu callback là undefined, filter là callback (tương thích ngược)
+  if (typeof filter === 'function') {
+    callback = filter;
+    filter = null;
+  }
+
+  const dateRange = getDateRange(filter);
+  let sql = `
     SELECT 
       lh.MaLichHen as id,
       lh.MaBenhNhan as patientId,
@@ -68,7 +132,7 @@ exports.getAll = (callback) => {
       DATE_FORMAT(lh.ThoiGianKham, '%Y-%m-%d %H:%i:%s') as appointmentTime,
       lh.TrangThai as status,
       lh.Note as note,
-lh.CreatedAt as createdAt,
+      lh.CreatedAt as createdAt,
       lh.UpdatedAt as updatedAt,
       bn.HoTen as patientName,
       bn.SoDienThoai as patientPhone,
@@ -79,9 +143,17 @@ lh.CreatedAt as createdAt,
     LEFT JOIN benhnhan bn ON lh.MaBenhNhan = bn.MaBenhNhan
     LEFT JOIN bacsi bs ON lh.MaBacSi = bs.MaBacSi
     LEFT JOIN khoa k ON bs.MaKhoa = k.MaKhoa
-    ORDER BY lh.ThoiGianKham DESC
   `;
-  db.query(sql, (err, results) => {
+
+  const params = [];
+  if (dateRange) {
+    sql += ` WHERE lh.ThoiGianKham >= ? AND lh.ThoiGianKham <= ?`;
+    params.push(dateRange.start, dateRange.end);
+  }
+
+  sql += ` ORDER BY lh.ThoiGianKham DESC`;
+
+  db.query(sql, params, (err, results) => {
     if (err) return callback(err);
     // Format datetime cho mỗi kết quả để đảm bảo format đúng
     const formattedResults = results.map(row => ({
@@ -189,8 +261,15 @@ exports.delete = (id, callback) => {
 };
 
 // Lấy lịch hẹn theo MaBenhNhan
-exports.getByMaBenhNhan = (maBenhNhan, callback) => {
-  const sql = `
+exports.getByMaBenhNhan = (maBenhNhan, filter, callback) => {
+  // Nếu callback là undefined, filter là callback (tương thích ngược)
+  if (typeof filter === 'function') {
+    callback = filter;
+    filter = null;
+  }
+
+  const dateRange = getDateRange(filter);
+  let sql = `
     SELECT 
       lh.MaLichHen as id,
       lh.MaBenhNhan as patientId,
@@ -210,9 +289,17 @@ exports.getByMaBenhNhan = (maBenhNhan, callback) => {
     LEFT JOIN bacsi bs ON lh.MaBacSi = bs.MaBacSi
     LEFT JOIN khoa k ON bs.MaKhoa = k.MaKhoa
     WHERE lh.MaBenhNhan = ?
-    ORDER BY lh.ThoiGianKham DESC
   `;
-  db.query(sql, [maBenhNhan], (err, results) => {
+
+  const params = [maBenhNhan];
+  if (dateRange) {
+    sql += ` AND lh.ThoiGianKham >= ? AND lh.ThoiGianKham <= ?`;
+    params.push(dateRange.start, dateRange.end);
+  }
+
+  sql += ` ORDER BY lh.ThoiGianKham DESC`;
+
+  db.query(sql, params, (err, results) => {
     if (err) return callback(err);
     // Format datetime cho mỗi kết quả
     const formattedResults = results.map(row => ({
@@ -224,8 +311,15 @@ exports.getByMaBenhNhan = (maBenhNhan, callback) => {
 };
 
 // Lấy lịch hẹn theo MaBacSi
-exports.getByMaBacSi = (maBacSi, callback) => {
-  const sql = `
+exports.getByMaBacSi = (maBacSi, filter, callback) => {
+  // Nếu callback là undefined, filter là callback (tương thích ngược)
+  if (typeof filter === 'function') {
+    callback = filter;
+    filter = null;
+  }
+
+  const dateRange = getDateRange(filter);
+  let sql = `
     SELECT 
       lh.MaLichHen as id,
       lh.MaBenhNhan as patientId,
@@ -245,10 +339,18 @@ exports.getByMaBacSi = (maBacSi, callback) => {
     LEFT JOIN bacsi bs ON lh.MaBacSi = bs.MaBacSi
     LEFT JOIN khoa k ON bs.MaKhoa = k.MaKhoa
     WHERE lh.MaBacSi = ?
-    ORDER BY lh.ThoiGianKham DESC
   `;
-  db.query(sql, [maBacSi], (err, results) => {
-if (err) return callback(err);
+
+  const params = [maBacSi];
+  if (dateRange) {
+    sql += ` AND lh.ThoiGianKham >= ? AND lh.ThoiGianKham <= ?`;
+    params.push(dateRange.start, dateRange.end);
+  }
+
+  sql += ` ORDER BY lh.ThoiGianKham DESC`;
+
+  db.query(sql, params, (err, results) => {
+    if (err) return callback(err);
     // Format datetime cho mỗi kết quả
     const formattedResults = results.map(row => ({
       ...row,

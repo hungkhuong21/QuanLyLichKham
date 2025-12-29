@@ -311,24 +311,29 @@ exports.tiepNhanTrucTiep = (req, res) => {
 
 // Lấy tất cả lịch hẹn
 exports.getAllLichHen = (req, res) => {
-  // Lấy params từ query string (do frontend gửi qua HttpParams)
-  const { MaNguoiDung, LoaiNguoiDung } = req.query;
+  // Lấy user info từ middleware authMiddleware (
+  const { MaNguoiDung, LoaiNguoiDung } = req.user || {};
+  
+  // Lấy filter từ query parameter (có thể là: 'Tất cả', 'Hôm nay', 'Ngày mai', 'Tuần này', 'Tháng này')
+  const filter = req.query.filter || req.query.dateFilter || null;
 
   console.log('=== GET ALL APPOINTMENTS ===');
   console.log('req.query:', req.query);
+  console.log('filter:', filter);
+  console.log('req.user:', req.user);
   console.log('MaNguoiDung:', MaNguoiDung, 'type:', typeof MaNguoiDung);
   console.log('LoaiNguoiDung:', LoaiNguoiDung);
   console.log('===========================');
 
-  //  KIỂM TRA ADMIN TRƯỚC - Admin không cần MaNguoiDung
-  if (LoaiNguoiDung === 'Admin' || LoaiNguoiDung === 'QuanTriVien') {
-    console.log('[INFO] Admin user - returning all appointments');
-    LichHen.getAll((err, results) => {
+  //  KIỂM TRA ADMIN, QUẢN TRỊ VIÊN, NHÂN VIÊN - Họ có thể xem tất cả lịch hẹn
+  if (LoaiNguoiDung === 'Admin' || LoaiNguoiDung === 'QuanTriVien' || LoaiNguoiDung === 'NhanVien') {
+    console.log('[INFO] Admin/Staff user - returning all appointments with filter:', filter);
+    LichHen.getAll(filter, (err, results) => {
       if (err) {
         console.error('[ERROR] Database error:', err);
         return res.status(500).json({ error: 'Lỗi lấy danh sách lịch hẹn', details: err });
       }
-      console.log('[SUCCESS] Admin returned', results.length, 'appointments');
+      console.log('[SUCCESS] Admin/Staff returned', results.length, 'appointments');
       res.json(results);
     });
     return;
@@ -356,8 +361,8 @@ exports.getAllLichHen = (req, res) => {
 
   // BỆNH NHÂN: Chỉ xem lịch của mình
   if (LoaiNguoiDung === 'BenhNhan') {
-    console.log('[INFO] Patient user - filtering by MaBenhNhan:', maNguoiDungNumber);
-    LichHen.getByMaBenhNhan(maNguoiDungNumber, (err, results) => {
+    console.log('[INFO] Patient user - filtering by MaBenhNhan:', maNguoiDungNumber, 'with filter:', filter);
+    LichHen.getByMaBenhNhan(maNguoiDungNumber, filter, (err, results) => {
       if (err) {
         console.error('[ERROR] Database error:', err);
         return res.status(500).json({ error: 'Lỗi lấy danh sách lịch hẹn', details: err });
@@ -370,8 +375,8 @@ exports.getAllLichHen = (req, res) => {
 
   // BÁC SĨ: Xem lịch của bác sĩ đó
   if (LoaiNguoiDung === 'BacSi') {
-    console.log('[INFO] Doctor user - filtering by MaBacSi:', maNguoiDungNumber);
-    LichHen.getByMaBacSi(maNguoiDungNumber, (err, results) => {
+    console.log('[INFO] Doctor user - filtering by MaBacSi:', maNguoiDungNumber, 'with filter:', filter);
+    LichHen.getByMaBacSi(maNguoiDungNumber, filter, (err, results) => {
       if (err) {
         console.error('[ERROR] Database error:', err);
         return res.status(500).json({ error: 'Lỗi lấy danh sách lịch hẹn', details: err });
