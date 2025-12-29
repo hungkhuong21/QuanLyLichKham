@@ -8,6 +8,8 @@ router.post('/dat-lich', lichHenController.datLichHen);
 router.post('/tiep-nhan/online', lichHenController.tiepNhanOnline);
 // Tiếp nhận trực tiếp
 router.post('/tiep-nhan/truc-tiep', lichHenController.tiepNhanTrucTiep);
+// Tìm kiếm lịch hẹn theo khoa, bác sĩ
+router.get('/search', lichHenController.searchLichHen);
 // Lấy tất cả lịch hẹn
 router.get('/', lichHenController.getAllLichHen);
 // Cập nhật trạng thái lịch hẹn (route cũ - giữ lại để tương thích)

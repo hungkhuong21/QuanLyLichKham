@@ -359,3 +359,62 @@ exports.getByMaBacSi = (maBacSi, filter, callback) => {
     callback(null, formattedResults);
   });
 };
+// Tìm ki?m l?ch h?n theo khoa, bác si
+exports.search = (searchParams, callback) => {
+  const { maKhoa, maBacSi, filter } = searchParams;
+  
+  let sql = 
+    SELECT 
+      lh.MaLichHen as id,
+      lh.MaBenhNhan as patientId,
+      lh.MaBacSi as doctorId,
+      DATE_FORMAT(lh.ThoiGianKham, '%Y-%m-%d %H:%i:%s') as appointmentTime,
+      lh.TrangThai as status,
+      lh.Note as note,
+      lh.CreatedAt as createdAt,
+      lh.UpdatedAt as updatedAt,
+      bn.HoTen as patientName,
+      bn.SoDienThoai as patientPhone,
+      bs.HoTen as doctorName,
+      k.TenKhoa as departmentName,
+      bs.MaKhoa as departmentId
+    FROM lichhen lh
+    LEFT JOIN benhnhan bn ON lh.MaBenhNhan = bn.MaBenhNhan
+    LEFT JOIN bacsi bs ON lh.MaBacSi = bs.MaBacSi
+    LEFT JOIN khoa k ON bs.MaKhoa = k.MaKhoa
+    WHERE 1=1
+  ;
+
+  const params = [];
+  
+  // Tìm theo khoa
+  if (maKhoa) {
+    sql +=  AND bs.MaKhoa = ?;
+    params.push(maKhoa);
+  }
+  
+  // Tìm theo bác si
+  if (maBacSi) {
+    sql +=  AND lh.MaBacSi = ?;
+    params.push(maBacSi);
+  }
+  
+  // L?c theo ngày/tu?n/tháng
+  const dateRange = getDateRange(filter);
+  if (dateRange) {
+    sql +=  AND lh.ThoiGianKham >= ? AND lh.ThoiGianKham <= ?;
+    params.push(dateRange.start, dateRange.end);
+  }
+
+  sql +=  ORDER BY lh.ThoiGianKham DESC;
+
+  db.query(sql, params, (err, results) => {
+    if (err) return callback(err);
+    // Format datetime cho m?i k?t qu?
+    const formattedResults = results.map(row => ({
+      ...row,
+      appointmentTime: formatDateTime(row.appointmentTime)
+    }));
+    callback(null, formattedResults);
+  });
+};

@@ -392,6 +392,46 @@ exports.getAllLichHen = (req, res) => {
   res.status(403).json({ error: 'Không có quyền truy cập. LoaiNguoiDung không hợp lệ: ' + LoaiNguoiDung });
 };
 
+// Tìm kiếm lịch hẹn theo khoa, bác sĩ
+exports.searchLichHen = (req, res) => {
+  const { maKhoa, maBacSi, filter } = req.query;
+  
+  console.log('=== SEARCH APPOINTMENTS ===');
+  console.log('req.query:', req.query);
+  console.log('maKhoa:', maKhoa, 'maBacSi:', maBacSi, 'filter:', filter);
+  console.log('===========================');
+
+  // Kiểm tra ít nhất một tham số tìm kiếm
+  if (!maKhoa && !maBacSi) {
+    return res.status(400).json({ 
+      error: 'Vui lòng cung cấp ít nhất một tham số tìm kiếm (maKhoa hoặc maBacSi)' 
+    });
+  }
+
+  const searchParams = {
+    maKhoa: maKhoa ? parseInt(maKhoa) : null,
+    maBacSi: maBacSi ? parseInt(maBacSi) : null,
+    filter: filter || null
+  };
+
+  // Kiểm tra số hợp lệ
+  if (searchParams.maKhoa && isNaN(searchParams.maKhoa)) {
+    return res.status(400).json({ error: 'maKhoa không hợp lệ' });
+  }
+  if (searchParams.maBacSi && isNaN(searchParams.maBacSi)) {
+    return res.status(400).json({ error: 'maBacSi không hợp lệ' });
+  }
+
+  LichHen.search(searchParams, (err, results) => {
+    if (err) {
+      console.error('[ERROR] Database error:', err);
+      return res.status(500).json({ error: 'Lỗi tìm kiếm lịch hẹn', details: err });
+    }
+    console.log('[SUCCESS] Found', results.length, 'appointments');
+    res.json(results);
+  });
+};
+
 // Lấy lịch hẹn theo id
 exports.getLichHenById = (req, res) => {
   LichHen.getById(req.params.id, (err, results) => {
