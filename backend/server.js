@@ -19,6 +19,8 @@ app.use(authMiddleware);
 
 require('dotenv').config(); //dùng để gửi mã qua email
 
+require('dotenv').config(); //dùng để gửi mã qua email
+
 // Route gốc
 app.get('/', (req, res) => {
   res.send('API Quản lý lịch khám đang chạy...');

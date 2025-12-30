@@ -359,7 +359,7 @@ exports.getByMaBacSi = (maBacSi, filter, callback) => {
     callback(null, formattedResults);
   });
 };
-// Tìm ki?m l?ch h?n theo khoa, bác si
+// Tï¿½m ki?m l?ch h?n theo khoa, bï¿½c si
 exports.search = (searchParams, callback) => {
   const { maKhoa, maBacSi, filter } = searchParams;
   
@@ -387,19 +387,19 @@ exports.search = (searchParams, callback) => {
 
   const params = [];
   
-  // Tìm theo khoa
+  // Tï¿½m theo khoa
   if (maKhoa) {
     sql +=  AND bs.MaKhoa = ?;
     params.push(maKhoa);
   }
   
-  // Tìm theo bác si
+  // Tï¿½m theo bï¿½c si
   if (maBacSi) {
     sql +=  AND lh.MaBacSi = ?;
     params.push(maBacSi);
   }
   
-  // L?c theo ngày/tu?n/tháng
+  // L?c theo ngï¿½y/tu?n/thï¿½ng
   const dateRange = getDateRange(filter);
   if (dateRange) {
     sql +=  AND lh.ThoiGianKham >= ? AND lh.ThoiGianKham <= ?;

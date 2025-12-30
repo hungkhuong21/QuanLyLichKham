@@ -1,0 +1,65 @@
+<app-header></app-header>
+<div class="login-page">
+  <div class="hero-landing">
+    <div class="white-shape"></div>
+    <div class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">Nơi Khởi Nguồn Niềm Tin</h1>
+        <p class="hero-description">
+          Chúng tôi am hiểu những thách thức lớn trong y học và mang đến sự chăm sóc tận tâm cho từng bệnh nhân.
+        </p>
+        <div class="hero-buttons">
+          <a class="btn-primary" routerLink="/register">Đặt lịch ngay</a>
+          <button class="btn-secondary">Tìm hiểu thêm</button>
+        </div>
+      </div>
+      <div class="ambulance-image">
+        <div class="ambulance-placeholder">🚑</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="login-form-overlay">
+    <div class="login-form-container">
+      <h2 class="welcome-title">WELCOME BACK <span>🌻</span></h2>
+      
+      <form class="login-form">
+        <div class="form-group">
+          <div class="input-wrapper">
+            <span class="input-icon">✉️</span>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="email" 
+              placeholder="Tên đăng nhập (Email)"
+              [(ngModel)]="TenDangNhap" 
+              name="TenDangNhap"
+              (paste)="onPaste($event)" 
+            />
+          </div>
+        </div>
+
+        <div class="form-group password-field">
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input
+              type="password"
+              placeholder="Mật khẩu"
+              class="form-control"
+              id="password"
+              [(ngModel)]="MatKhau"
+              name="MatKhau"
+              (paste)="onPaste($event)"
+            />
+            <i class="password-toggle fas fa-eye-slash" (click)="togglePasswordVisibility('password')"></i>
+          </div>
+        </div>
+
+        <a [routerLink]="['/forgot-password']" class="forgot-password">Forgot Your Password?</a>
+
+        <button type="button" class="login-button" (click)="onLogin()">LOGIN</button>
+      </form>
+    </div>
+  </div>
+</div>
+

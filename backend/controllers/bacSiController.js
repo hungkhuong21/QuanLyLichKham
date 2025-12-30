@@ -93,6 +93,8 @@ exports.getTotalInactive = (req, res) => {
     });
   });
 };
+<<<<<<< HEAD
+=======
 
 // Tìm kiếm bác sĩ
 exports.searchBacSi = (req, res) => {
@@ -125,3 +127,4 @@ exports.searchBacSi = (req, res) => {
     res.json(results);
   });
 };
+>>>>>>> b4b6cfeb909f213e1a81c974526a9106ae793471
