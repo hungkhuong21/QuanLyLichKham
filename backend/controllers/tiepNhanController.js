@@ -184,3 +184,36 @@ exports.searchDanhSachBenhNhanTrongNgay = (req, res) => {
   });
 };
 
+// Xem danh sách bệnh nhân theo ngày (có phân trang)
+exports.getDanhSachBenhNhanTheoNgay = (req, res) => {
+  const { date, page = 1, limit = 10 } = req.query;
+
+  if (!date) {
+    return res.status(400).json({ error: 'Thiếu tham số date (format: YYYY-MM-DD)' });
+  }
+
+  // Validate date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ error: 'Định dạng date không hợp lệ (phải là YYYY-MM-DD)' });
+  }
+
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+
+  if (isNaN(pageNum) || pageNum < 1) {
+    return res.status(400).json({ error: 'page phải là số nguyên dương' });
+  }
+
+  if (isNaN(limitNum) || limitNum < 1) {
+    return res.status(400).json({ error: 'limit phải là số nguyên dương' });
+  }
+
+  TiepNhan.getByDate(date, pageNum, limitNum, (err, result) => {
+    if (err) {
+      console.error('[ERROR] Database error:', err);
+      return res.status(500).json({ error: 'Lỗi lấy danh sách bệnh nhân', details: err });
+    }
+    res.json(result);
+  });
+};
+
