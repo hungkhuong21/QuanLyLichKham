@@ -8,4 +8,7 @@ router.post('/theo-lich', tiepNhanController.tiepNhanTheoLich);
 // Tìm kiếm theo mã lịch hẹn, số điện thoại, cccd
 router.get('/search', tiepNhanController.searchTiepNhan);
 
+// Tìm kiếm danh sách bệnh nhân trong ngày bằng mã lịch hẹn, tên, sđt (có phân trang)
+router.get('/search-theo-ngay', tiepNhanController.searchDanhSachBenhNhanTrongNgay);
+
 module.exports = router;
