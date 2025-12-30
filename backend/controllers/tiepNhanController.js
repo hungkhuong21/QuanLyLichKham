@@ -1,4 +1,4 @@
-const TiepNhanModel = require('../models/tiepNhanModel');
+const TiepNhan = require('../models/tiepNhanModel');
 const LichHen = require('../models/lichHenModel');
 const TrangThaiTiepNhan = require('../models/trangThaiTiepNhanModel');
 const BacSi = require('../models/bacSiModel');
@@ -8,6 +8,7 @@ const getMaTrangThai = (tenTrangThai, callback) => {
   TrangThaiTiepNhan.getByTen(tenTrangThai, (err, results) => {
     if (err) return callback(err);
     if (!results || results.length === 0) {
+      // Nếu không tìm thấy, tạo mới
       TrangThaiTiepNhan.create({ TenTrangThai: tenTrangThai }, (err2, result) => {
         if (err2) return callback(err2);
         callback(null, result.insertId);
@@ -100,105 +101,119 @@ exports.tiepNhanTheoLich = (req, res) => {
   });
 };
 
-// Tìm kiếm tiếp nhận theo mã lịch hẹn, số điện thoại, cccd
+// Tìm kiếm theo mã lịch hẹn, số điện thoại, cccd
 exports.searchTiepNhan = (req, res) => {
   const { maLichHen, soDienThoai, cccd } = req.query;
-  
-  console.log('=== SEARCH RECEPTION ===');
-  console.log('req.query:', req.query);
-  console.log('========================');
-  
+
   // Kiểm tra ít nhất một tham số tìm kiếm
   if (!maLichHen && !soDienThoai && !cccd) {
-    return res.status(400).json({ 
-      error: 'Vui lòng cung cấp ít nhất một tham số tìm kiếm (maLichHen, soDienThoai, hoặc cccd)' 
+    return res.status(400).json({
+      error: 'Vui lòng cung cấp ít nhất một tham số tìm kiếm (maLichHen, soDienThoai hoặc cccd)'
     });
   }
-  
+
   const searchParams = {
     maLichHen: maLichHen ? parseInt(maLichHen) : null,
     soDienThoai: soDienThoai || null,
     cccd: cccd || null
   };
-  
+
   // Kiểm tra số hợp lệ
   if (searchParams.maLichHen && isNaN(searchParams.maLichHen)) {
     return res.status(400).json({ error: 'maLichHen không hợp lệ' });
   }
-  
-  TiepNhanModel.search(searchParams, (err, results) => {
+
+  TiepNhan.search(searchParams, (err, results) => {
     if (err) {
       console.error('[ERROR] Database error:', err);
       return res.status(500).json({ error: 'Lỗi tìm kiếm tiếp nhận', details: err });
     }
-    console.log('[SUCCESS] Found', results.length, 'receptions');
+    console.log('[SUCCESS] Found', results.length, 'reception records');
     res.json(results);
+  });
+};
+
+// Tìm kiếm danh sách bệnh nhân trong ngày bằng mã lịch hẹn, tên, sđt (có phân trang)
+exports.searchDanhSachBenhNhanTrongNgay = (req, res) => {
+  const { date, maLichHen, ten, soDienThoai, page = 1, limit = 10 } = req.query;
+
+  if (!date) {
+    return res.status(400).json({ error: 'Thiếu tham số date (format: YYYY-MM-DD)' });
+  }
+
+  // Validate date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ error: 'Định dạng date không hợp lệ (phải là YYYY-MM-DD)' });
+  }
+
+  // Kiểm tra ít nhất một tham số tìm kiếm
+  if (!maLichHen && !ten && !soDienThoai) {
+    return res.status(400).json({
+      error: 'Vui lòng cung cấp ít nhất một tham số tìm kiếm (maLichHen, ten hoặc soDienThoai)'
+    });
+  }
+
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+
+  if (isNaN(pageNum) || pageNum < 1) {
+    return res.status(400).json({ error: 'page phải là số nguyên dương' });
+  }
+
+  if (isNaN(limitNum) || limitNum < 1) {
+    return res.status(400).json({ error: 'limit phải là số nguyên dương' });
+  }
+
+  const searchParams = {
+    maLichHen: maLichHen ? parseInt(maLichHen) : null,
+    ten: ten || null,
+    soDienThoai: soDienThoai || null
+  };
+
+  // Kiểm tra số hợp lệ
+  if (searchParams.maLichHen && isNaN(searchParams.maLichHen)) {
+    return res.status(400).json({ error: 'maLichHen không hợp lệ' });
+  }
+
+  TiepNhan.searchByDate(date, searchParams, pageNum, limitNum, (err, result) => {
+    if (err) {
+      console.error('[ERROR] Database error:', err);
+      return res.status(500).json({ error: 'Lỗi tìm kiếm danh sách bệnh nhân', details: err });
+    }
+    res.json(result);
   });
 };
 
 // Xem danh sách bệnh nhân theo ngày (có phân trang)
 exports.getDanhSachBenhNhanTheoNgay = (req, res) => {
   const { date, page = 1, limit = 10 } = req.query;
-  
+
   if (!date) {
     return res.status(400).json({ error: 'Thiếu tham số date (format: YYYY-MM-DD)' });
   }
-  
-  const pageNum = parseInt(page) || 1;
-  const limitNum = parseInt(limit) || 10;
-  
-  TiepNhanModel.getByDate(date, pageNum, limitNum, (err, result) => {
+
+  // Validate date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ error: 'Định dạng date không hợp lệ (phải là YYYY-MM-DD)' });
+  }
+
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+
+  if (isNaN(pageNum) || pageNum < 1) {
+    return res.status(400).json({ error: 'page phải là số nguyên dương' });
+  }
+
+  if (isNaN(limitNum) || limitNum < 1) {
+    return res.status(400).json({ error: 'limit phải là số nguyên dương' });
+  }
+
+  TiepNhan.getByDate(date, pageNum, limitNum, (err, result) => {
     if (err) {
       console.error('[ERROR] Database error:', err);
       return res.status(500).json({ error: 'Lỗi lấy danh sách bệnh nhân', details: err });
     }
-    
-    res.json({
-      data: result.data,
-      pagination: result.pagination
-    });
-  });
-};
-
-// Tìm kiếm danh sách bệnh nhân trong ngày (mã lịch hẹn, tên, sđt) - có phân trang
-exports.searchDanhSachBenhNhanTrongNgay = (req, res) => {
-  const { date, maLichHen, ten, soDienThoai, page = 1, limit = 10 } = req.query;
-  
-  if (!date) {
-    return res.status(400).json({ error: 'Thiếu tham số date (format: YYYY-MM-DD)' });
-  }
-  
-  // Kiểm tra ít nhất một tham số tìm kiếm
-  if (!maLichHen && !ten && !soDienThoai) {
-    return res.status(400).json({ 
-      error: 'Vui lòng cung cấp ít nhất một tham số tìm kiếm (maLichHen, ten, hoặc soDienThoai)' 
-    });
-  }
-  
-  const searchParams = {
-    maLichHen: maLichHen ? parseInt(maLichHen) : null,
-    ten: ten || null,
-    soDienThoai: soDienThoai || null
-  };
-  
-  // Kiểm tra số hợp lệ
-  if (searchParams.maLichHen && isNaN(searchParams.maLichHen)) {
-    return res.status(400).json({ error: 'maLichHen không hợp lệ' });
-  }
-  
-  const pageNum = parseInt(page) || 1;
-  const limitNum = parseInt(limit) || 10;
-  
-  TiepNhanModel.searchByDate(date, searchParams, pageNum, limitNum, (err, result) => {
-    if (err) {
-      console.error('[ERROR] Database error:', err);
-      return res.status(500).json({ error: 'Lỗi tìm kiếm danh sách bệnh nhân', details: err });
-    }
-    
-    res.json({
-      data: result.data,
-      pagination: result.pagination
-    });
+    res.json(result);
   });
 };
 
