@@ -20,61 +20,80 @@ const getMaTrangThai = (tenTrangThai, callback) => {
 
 // Tiếp nhận theo lịch (từ lịch hẹn đã có)
 exports.tiepNhanTheoLich = (req, res) => {
-  const { MaLichHen } = req.body;
-  
+  const { MaLichHen, GhiChu } = req.body;
+
   if (!MaLichHen) {
     return res.status(400).json({ error: 'Thiếu mã lịch hẹn' });
   }
-  
+
   // Lấy thông tin lịch hẹn
   LichHen.getById(MaLichHen, (err, lichHenResults) => {
-    if (err) return res.status(500).json({ error: 'Lỗi lấy thông tin lịch hẹn', details: err });
+    if (err) {
+      console.error('[ERROR] Database error:', err);
+      return res.status(500).json({ error: 'Lỗi lấy thông tin lịch hẹn', details: err });
+    }
+
     if (!lichHenResults || lichHenResults.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy lịch hẹn' });
     }
-    
+
     const lichHen = lichHenResults[0];
-    
+
     // Kiểm tra xem đã có tiếp nhận chưa
     TiepNhanModel.getByMaLichHen(MaLichHen, (err2, tiepNhanResults) => {
-      if (err2) return res.status(500).json({ error: 'Lỗi kiểm tra tiếp nhận', details: err2 });
-      
-      if (tiepNhanResults && tiepNhanResults.length > 0) {
-        return res.status(409).json({ error: 'Lịch hẹn này đã được tiếp nhận' });
+      if (err2) {
+        console.error('[ERROR] Database error:', err2);
+        return res.status(500).json({ error: 'Lỗi kiểm tra tiếp nhận', details: err2 });
       }
-      
+
       // Lấy thông tin bác sĩ để lấy MaKhoa
       BacSi.getById(lichHen.doctorId, (err3, bacSiResults) => {
-        if (err3) return res.status(500).json({ error: 'Lỗi lấy thông tin bác sĩ', details: err3 });
+        if (err3) {
+          console.error('[ERROR] Database error:', err3);
+          return res.status(500).json({ error: 'Lỗi lấy thông tin bác sĩ', details: err3 });
+        }
+
         if (!bacSiResults || bacSiResults.length === 0) {
           return res.status(404).json({ error: 'Không tìm thấy bác sĩ' });
         }
-        
+
         const maKhoa = bacSiResults[0].MaKhoa;
-        
+
         // Lấy MaTrangThai cho "Đã tiếp nhận"
         getMaTrangThai('Đã tiếp nhận', (err4, MaTrangThai) => {
-          if (err4) return res.status(500).json({ error: 'Lỗi lấy trạng thái tiếp nhận', details: err4 });
-          
-          // Tạo tiếp nhận
-          const tiepNhanData = {
-            MaBenhNhan: lichHen.patientId,
-            MaBacSi: lichHen.doctorId,
-            MaKhoa: maKhoa,
-            MaLichHen: MaLichHen,
-            MaTrangThai: MaTrangThai,
-            GhiChu: lichHen.note || null
-          };
-          
-          TiepNhanModel.create(tiepNhanData, (err5, tiepNhanResult) => {
-            if (err5) return res.status(500).json({ error: 'Lỗi tạo tiếp nhận', details: err5 });
-            
-            res.json({
-              message: 'Tiếp nhận theo lịch thành công',
-              MaTiepNhan: tiepNhanResult.insertId,
-              MaLichHen: MaLichHen
+          if (err4) {
+            console.error('[ERROR] Database error:', err4);
+            return res.status(500).json({ error: 'Lỗi lấy trạng thái tiếp nhận', details: err4 });
+          }
+
+          if (tiepNhanResults && tiepNhanResults.length > 0) {
+            // Cập nhật tiếp nhận hiện có
+            TiepNhanModel.updateByMaLichHen(MaLichHen, { MaTrangThai, GhiChu: GhiChu || null }, (err5) => {
+              if (err5) {
+                console.error('[ERROR] Database error:', err5);
+                return res.status(500).json({ error: 'Lỗi cập nhật tiếp nhận', details: err5 });
+              }
+              return res.json({ message: 'Cập nhật tiếp nhận thành công' });
             });
-          });
+          } else {
+            // Tạo mới tiếp nhận
+            const tiepNhanData = {
+              MaBenhNhan: lichHen.patientId,
+              MaBacSi: lichHen.doctorId,
+              MaKhoa: maKhoa,
+              MaLichHen,
+              MaTrangThai,
+              GhiChu: GhiChu || null
+            };
+
+            TiepNhanModel.create(tiepNhanData, (err5) => {
+              if (err5) {
+                console.error('[ERROR] Database error:', err5);
+                return res.status(500).json({ error: 'Lỗi tạo tiếp nhận', details: err5 });
+              }
+              return res.json({ message: 'Tiếp nhận theo lịch thành công' });
+            });
+          }
         });
       });
     });
