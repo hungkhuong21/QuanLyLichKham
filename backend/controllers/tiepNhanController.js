@@ -81,3 +81,39 @@ exports.tiepNhanTheoLich = (req, res) => {
   });
 };
 
+// Tìm kiếm tiếp nhận theo mã lịch hẹn, số điện thoại, cccd
+exports.searchTiepNhan = (req, res) => {
+  const { maLichHen, soDienThoai, cccd } = req.query;
+  
+  console.log('=== SEARCH RECEPTION ===');
+  console.log('req.query:', req.query);
+  console.log('========================');
+  
+  // Kiểm tra ít nhất một tham số tìm kiếm
+  if (!maLichHen && !soDienThoai && !cccd) {
+    return res.status(400).json({ 
+      error: 'Vui lòng cung cấp ít nhất một tham số tìm kiếm (maLichHen, soDienThoai, hoặc cccd)' 
+    });
+  }
+  
+  const searchParams = {
+    maLichHen: maLichHen ? parseInt(maLichHen) : null,
+    soDienThoai: soDienThoai || null,
+    cccd: cccd || null
+  };
+  
+  // Kiểm tra số hợp lệ
+  if (searchParams.maLichHen && isNaN(searchParams.maLichHen)) {
+    return res.status(400).json({ error: 'maLichHen không hợp lệ' });
+  }
+  
+  TiepNhanModel.search(searchParams, (err, results) => {
+    if (err) {
+      console.error('[ERROR] Database error:', err);
+      return res.status(500).json({ error: 'Lỗi tìm kiếm tiếp nhận', details: err });
+    }
+    console.log('[SUCCESS] Found', results.length, 'receptions');
+    res.json(results);
+  });
+};
+
