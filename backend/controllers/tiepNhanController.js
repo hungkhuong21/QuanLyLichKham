@@ -117,3 +117,45 @@ exports.searchTiepNhan = (req, res) => {
   });
 };
 
+// Tìm kiếm danh sách bệnh nhân trong ngày (mã lịch hẹn, tên, sđt) - có phân trang
+exports.searchDanhSachBenhNhanTrongNgay = (req, res) => {
+  const { date, maLichHen, ten, soDienThoai, page = 1, limit = 10 } = req.query;
+  
+  if (!date) {
+    return res.status(400).json({ error: 'Thiếu tham số date (format: YYYY-MM-DD)' });
+  }
+  
+  // Kiểm tra ít nhất một tham số tìm kiếm
+  if (!maLichHen && !ten && !soDienThoai) {
+    return res.status(400).json({ 
+      error: 'Vui lòng cung cấp ít nhất một tham số tìm kiếm (maLichHen, ten, hoặc soDienThoai)' 
+    });
+  }
+  
+  const searchParams = {
+    maLichHen: maLichHen ? parseInt(maLichHen) : null,
+    ten: ten || null,
+    soDienThoai: soDienThoai || null
+  };
+  
+  // Kiểm tra số hợp lệ
+  if (searchParams.maLichHen && isNaN(searchParams.maLichHen)) {
+    return res.status(400).json({ error: 'maLichHen không hợp lệ' });
+  }
+  
+  const pageNum = parseInt(page) || 1;
+  const limitNum = parseInt(limit) || 10;
+  
+  TiepNhanModel.searchByDate(date, searchParams, pageNum, limitNum, (err, result) => {
+    if (err) {
+      console.error('[ERROR] Database error:', err);
+      return res.status(500).json({ error: 'Lỗi tìm kiếm danh sách bệnh nhân', details: err });
+    }
+    
+    res.json({
+      data: result.data,
+      pagination: result.pagination
+    });
+  });
+};
+
