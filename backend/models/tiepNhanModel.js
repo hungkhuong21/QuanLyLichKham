@@ -76,3 +76,96 @@ exports.search = (searchParams, callback) => {
   db.query(sql, params, callback);
 };
 
+// Tìm kiếm danh sách bệnh nhân trong ngày (mã lịch hẹn, tên, sđt)
+exports.searchByDate = (date, searchParams, page = 1, limit = 10, callback) => {
+  const { maLichHen, ten, soDienThoai } = searchParams;
+  const offset = (page - 1) * limit;
+  
+  // Xây dựng điều kiện WHERE
+  let whereConditions = `(DATE(tn.NgayTiepNhan) = ? OR DATE(lh.ThoiGianKham) = ?)`;
+  const params = [date, date];
+  const countParams = [date, date];
+  
+  if (maLichHen) {
+    whereConditions += ` AND tn.MaLichHen = ?`;
+    params.push(maLichHen);
+    countParams.push(maLichHen);
+  }
+  
+  if (ten) {
+    whereConditions += ` AND bn.HoTen LIKE ?`;
+    params.push(`%${ten}%`);
+    countParams.push(`%${ten}%`);
+  }
+  
+  if (soDienThoai) {
+    whereConditions += ` AND bn.SoDienThoai LIKE ?`;
+    params.push(`%${soDienThoai}%`);
+    countParams.push(`%${soDienThoai}%`);
+  }
+  
+  // Query để đếm tổng số
+  const countSql = `
+    SELECT COUNT(*) as total
+    FROM tiepnhan tn
+    LEFT JOIN benhnhan bn ON tn.MaBenhNhan = bn.MaBenhNhan
+    LEFT JOIN lichhen lh ON tn.MaLichHen = lh.MaLichHen
+    WHERE ${whereConditions}
+  `;
+  
+  // Query để lấy dữ liệu
+  const dataSql = `
+    SELECT 
+      tn.MaTiepNhan,
+      tn.MaBenhNhan,
+      tn.MaBacSi,
+      tn.MaKhoa,
+      tn.MaLichHen,
+      tn.MaTrangThai,
+      tn.NgayTiepNhan,
+      tn.GhiChu,
+      tt.TenTrangThai,
+      bn.HoTen as patientName,
+      bn.SoDienThoai as patientPhone,
+      bn.CMND_CCCD as patientCCCD,
+      bn.NgaySinh as patientBirthday,
+      bn.GioiTinh as patientGender,
+      bn.DiaChi as patientAddress,
+      bs.HoTen as doctorName,
+      k.TenKhoa as departmentName,
+      lh.ThoiGianKham as appointmentTime,
+      lh.TrangThai as appointmentStatus
+    FROM tiepnhan tn
+    LEFT JOIN trangthaitiepnhan tt ON tn.MaTrangThai = tt.MaTrangThai
+    LEFT JOIN benhnhan bn ON tn.MaBenhNhan = bn.MaBenhNhan
+    LEFT JOIN bacsi bs ON tn.MaBacSi = bs.MaBacSi
+    LEFT JOIN khoa k ON tn.MaKhoa = k.MaKhoa
+    LEFT JOIN lichhen lh ON tn.MaLichHen = lh.MaLichHen
+    WHERE ${whereConditions}
+    ORDER BY tn.NgayTiepNhan DESC, lh.ThoiGianKham DESC
+    LIMIT ? OFFSET ?
+  `;
+  
+  // Đếm tổng số
+  db.query(countSql, countParams, (err, countResults) => {
+    if (err) return callback(err);
+    const total = countResults[0].total;
+    const totalPages = Math.ceil(total / limit);
+    
+    // Lấy dữ liệu
+    params.push(limit, offset);
+    db.query(dataSql, params, (err2, results) => {
+      if (err2) return callback(err2);
+      callback(null, {
+        data: results,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: total,
+          totalPages: totalPages
+        }
+      });
+    });
+  });
+};
+
