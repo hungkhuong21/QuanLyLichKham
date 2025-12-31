@@ -11,5 +11,8 @@ router.get('/search', tiepNhanController.searchTiepNhan);
 // Tìm kiếm danh sách bệnh nhân trong ngày (mã lịch hẹn, tên, sđt) - có phân trang
 router.get('/tim-kiem-trong-ngay', tiepNhanController.searchDanhSachBenhNhanTrongNgay);
 
+// Xem danh sách bệnh nhân theo ngày (có phân trang)
+router.get('/danh-sach-theo-ngay', tiepNhanController.getDanhSachBenhNhanTheoNgay);
+
 module.exports = router;
 
