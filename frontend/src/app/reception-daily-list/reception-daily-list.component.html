@@ -1,0 +1,186 @@
+<div class="reception-daily-list-page">
+  <app-header></app-header>
+
+  <!-- Navigation Header -->
+  <div class="reception-nav">
+    <div class="reception-nav-container">
+      <a routerLink="/reception" routerLinkActive="active" class="nav-link-item">Tiếp Nhận Theo Lịch</a>
+      <a routerLink="/reception/direct" routerLinkActive="active" class="nav-link-item">Tiếp Nhận Trực Tiếp</a>
+      <a routerLink="/reception/update-profile" routerLinkActive="active" class="nav-link-item">Cập Nhật Hồ Sơ</a>
+      <a routerLink="/reception/daily-list" routerLinkActive="active" class="nav-link-item">Danh Sách Trong Ngày</a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="reception-main">
+    <div class="reception-container">
+      
+      <!-- Header Section -->
+      <div class="list-header-section">
+        <div class="list-header-card">
+          <h2 class="list-title">Danh Sách Bệnh Nhân Trong Ngày</h2>
+          
+          <!-- Filters -->
+          <div class="filters-section">
+            <div class="filter-group">
+              <label for="searchQuery" class="filter-label">Tìm kiếm:</label>
+              <input
+                type="text"
+                id="searchQuery"
+                class="filter-input"
+                [(ngModel)]="searchQuery"
+                (input)="onFilterChange()"
+                placeholder="Mã lịch hẹn, tên, SĐT..."
+              />
+            </div>
+            <div class="filter-group">
+              <label for="selectedDepartment" class="filter-label">Khoa:</label>
+              <select
+                id="selectedDepartment"
+                class="filter-select"
+                [(ngModel)]="selectedDepartment"
+                (change)="onFilterChange()"
+              >
+                <option *ngFor="let dept of departments" [value]="dept.id">
+                  {{ dept.name }}
+                </option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="selectedStatus" class="filter-label">Trạng thái:</label>
+              <select
+                id="selectedStatus"
+                class="filter-select"
+                [(ngModel)]="selectedStatus"
+                (change)="onFilterChange()"
+              >
+                <option *ngFor="let status of statuses" [value]="status.id">
+                  {{ status.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Summary Info -->
+          <div class="summary-info">
+            <span class="summary-text">
+              Tổng số: <strong>{{ filteredAppointments.length }}</strong> bệnh nhân
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appointments Table -->
+      <div class="appointments-section">
+        <div class="appointments-card">
+          <div class="table-container">
+            <table class="appointments-table">
+              <thead>
+                <tr>
+                  <th>STT</th>
+                  <th>Mã lịch hẹn</th>
+                  <th>Họ tên</th>
+                  <th>Ngày sinh</th>
+                  <th>Giới tính</th>
+                  <th>SĐT</th>
+                  <th>Khoa khám</th>
+                  <th>Bác sĩ</th>
+                  <th>Giờ hẹn</th>
+                  <th>Trạng thái</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let appointment of paginatedAppointments; let i = index">
+                  <td>{{ (currentPage - 1) * itemsPerPage + i + 1 }}</td>
+                  <td>{{ appointment.appointmentId }}</td>
+                  <td>{{ appointment.fullName }}</td>
+                  <td>{{ appointment.dateOfBirth }}</td>
+                  <td>{{ appointment.gender }}</td>
+                  <td>{{ appointment.phoneNumber }}</td>
+                  <td>{{ appointment.department }}</td>
+                  <td>{{ appointment.doctor }}</td>
+                  <td>{{ appointment.appointmentTime }}</td>
+                  <td>
+                    <span class="status-badge" [class.status-pending]="appointment.status === 'Chờ xác nhận'"
+                      [class.status-confirmed]="appointment.status === 'Đã xác nhận'"
+                      [class.status-examining]="appointment.status === 'Đang khám'"
+                      [class.status-completed]="appointment.status === 'Hoàn thành'"
+                      [class.status-cancelled]="appointment.status === 'Hủy'">
+                      {{ appointment.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <button 
+                        class="action-btn confirm-btn" 
+                        *ngIf="appointment.status === 'Chờ xác nhận'"
+                        (click)="confirmReception(appointment)"
+                        title="Xác nhận tiếp nhận"
+                      >
+                        Xác nhận
+                      </button>
+                      <button 
+                        class="action-btn print-btn" 
+                        (click)="printSlip(appointment)"
+                        title="In phiếu"
+                      >
+                        In phiếu
+                      </button>
+                      <button 
+                        class="action-btn view-btn" 
+                        (click)="viewDetails(appointment)"
+                        title="Xem chi tiết"
+                      >
+                        Chi tiết
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="paginatedAppointments.length === 0">
+                  <td colspan="11" class="empty-message">
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination-section" *ngIf="totalPages > 1">
+            <div class="pagination">
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                (click)="goToPage(currentPage - 1)" 
+                [disabled]="currentPage === 1"
+              >
+                &lt;&lt;
+              </button>
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                *ngFor="let page of getPageNumbers()" 
+                [class.active]="page === currentPage"
+                (click)="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                (click)="goToPage(currentPage + 1)" 
+                [disabled]="currentPage === totalPages"
+              >
+                &gt;&gt;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <app-footer></app-footer>
+</div>
