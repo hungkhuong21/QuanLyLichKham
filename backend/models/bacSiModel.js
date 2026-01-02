@@ -64,8 +64,6 @@ exports.countActive = (callback) => {
 exports.countInactive = (callback) => {
   db.query('SELECT COUNT(*) AS total FROM bacsi WHERE TrangThai = "Inactive"', callback);
 };
-<<<<<<< HEAD
-=======
 
 // Tìm kiếm bác sĩ
 exports.search = (searchParams, callback) => {
@@ -112,4 +110,4 @@ exports.search = (searchParams, callback) => {
 
   db.query(sql, params, callback);
 };
->>>>>>> b4b6cfeb909f213e1a81c974526a9106ae793471
+

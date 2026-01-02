@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const db = require('./config/db'); 
+const db = require('./config/db');
+const authMiddleware = require('./middleware/authMiddleware');
 
 const taiKhoanRoutes = require('./routes/taiKhoanRoutes');
 const lichHenRoutes = require('./routes/lichHenRoutes');
@@ -9,11 +10,11 @@ const benhNhanRoutes = require('./routes/benhNhanRoutes');
 const bacSiRoutes = require('./routes/bacSiRoutes');
 const lichLamViecRoutes = require('./routes/lichLamViecRoutes');
 const khoaRoutes = require('./routes/khoaRoutes');
-const thanhToanRoutes = require('./routes/thanhToanRoutes');
 const thongKeRoutes = require('./routes/thongKeRoutes');
 
 app.use(cors());
 app.use(express.json());
+app.use(authMiddleware);
 
 require('dotenv').config(); //dùng để gửi mã qua email
 
@@ -29,7 +30,6 @@ app.use('/api/benhnhan', benhNhanRoutes);
 app.use('/api/bacsi', bacSiRoutes);
 app.use('/api/lichlamviec', lichLamViecRoutes);
 app.use('/api/khoa', khoaRoutes);
-app.use('/api/thanhtoan', thanhToanRoutes);
 app.use('/api/thongke', thongKeRoutes);
 
 // Chạy server

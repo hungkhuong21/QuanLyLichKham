@@ -1,0 +1,460 @@
+<div class="appointment-management-page">
+  <!-- Main Content -->
+  <div class="appointment-management-main">
+    <div class="appointment-management-container">
+      
+      <!-- Header with Add Button -->
+      <div class="list-header-section">
+        <div class="list-header-card">
+          <div class="header-row">
+            <h2 class="content-title">Quản Lý Lịch Hẹn</h2>
+            <button type="button" class="add-btn" (click)="openAddModal()">
+              <span class="add-icon">+</span>
+              Thêm lịch hẹn
+            </button>
+          </div>
+          
+          <!-- Search and Filter Section -->
+          <div class="search-section">
+            <div class="search-form">
+              <div class="search-group">
+                <label class="search-label">Tìm kiếm:</label>
+                <input 
+                  type="text" 
+                  class="search-input" 
+                  [(ngModel)]="searchText" 
+                  (input)="onSearch()"
+                  placeholder="Tìm theo tên bệnh nhân, bác sĩ, khoa, SĐT..."
+                />
+              </div>
+              <div class="search-group">
+                <label class="search-label">Trạng thái:</label>
+                <select 
+                  class="search-select" 
+                  [(ngModel)]="filterStatus" 
+                  (change)="onFilterChange()"
+                >
+                  <option value="">Tất cả</option>
+                  <option *ngFor="let status of statusOptions" [value]="status.value">
+                    {{ status.label }}
+                  </option>
+                </select>
+              </div>
+              <div class="search-group">
+                <label class="search-label">Khoa:</label>
+                <select 
+                  class="search-select" 
+                  [(ngModel)]="filterDepartment" 
+                  (change)="onFilterChange()"
+                >
+                  <option value="">Tất cả</option>
+                  <option *ngFor="let dept of departments" [value]="dept.name">
+                    {{ dept.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="search-group">
+                <label class="search-label">Bác sĩ:</label>
+                <select 
+                  class="search-select" 
+                  [(ngModel)]="filterDoctor" 
+                  (change)="onFilterChange()"
+                >
+                  <option value="">Tất cả</option>
+                  <option *ngFor="let doctor of doctors" [value]="doctor.name">
+                    {{ doctor.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="search-group">
+                <label class="search-label">Ngày:</label>
+                <input 
+                  type="date" 
+                  class="search-input" 
+                  [(ngModel)]="filterDate" 
+                  (change)="onFilterChange()"
+                />
+              </div>
+              <button type="button" class="search-btn" (click)="onSearch()">
+                Tìm Kiếm
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appointment List Table -->
+      <div class="appointment-list-section">
+        <div class="content-card">
+          <div class="table-container">
+            <table class="appointment-table">
+              <thead>
+                <tr>
+                  <th class="text-center">STT</th>
+                  <th class="text-left">Bệnh nhân</th>
+                  <th class="text-left">SĐT</th>
+                  <th class="text-left">Bác sĩ</th>
+                  <th class="text-left">Khoa</th>
+                  <th class="text-left">Thời gian khám</th>
+                  <th class="text-left">Trạng thái</th>
+                  <th class="text-center">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="isLoading">
+                  <td colspan="8" class="empty-message">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+                <tr *ngIf="!isLoading && paginatedAppointments.length === 0">
+                  <td colspan="8" class="empty-message">
+                    Không tìm thấy lịch hẹn nào.
+                  </td>
+                </tr>
+                <tr *ngFor="let appointment of paginatedAppointments; let i = index">
+                  <td class="text-center">{{ (currentPage - 1) * itemsPerPage + i + 1 }}</td>
+                  <td class="text-left">{{ appointment.patientName || '-' }}</td>
+                  <td class="text-left">{{ appointment.patientPhone || '-' }}</td>
+                  <td class="text-left">{{ appointment.doctorName || '-' }}</td>
+                  <td class="text-left">{{ appointment.departmentName || '-' }}</td>
+                  <td class="text-left">{{ formatDate(appointment.appointmentTime) }}</td>
+                  <td class="text-left">
+                    <span class="status-badge" [ngClass]="getStatusClass(appointment.status)">
+                      {{ getStatusLabel(appointment.status) }}
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    <div class="action-buttons">
+                      <button 
+                        class="action-btn view-btn" 
+                        (click)="viewAppointmentDetails(appointment)"
+                        title="Xem chi tiết"
+                      >
+                        Chi tiết
+                      </button>
+                      <button 
+                        class="action-btn update-btn" 
+                        (click)="openUpdateModal(appointment)"
+                        title="Cập nhật"
+                        [disabled]="appointment.status === 'Đã hủy' || appointment.status === 'Hoàn thành'"
+                      >
+                        Cập nhật
+                      </button>
+                      <button 
+                        class="action-btn cancel-btn-small" 
+                        (click)="cancelAppointment(appointment)"
+                        title="Hủy lịch hẹn"
+                        [disabled]="appointment.status === 'Đã hủy' || appointment.status === 'Hoàn thành'"
+                      >
+                        Hủy
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination-section" *ngIf="totalPages > 1">
+            <div class="pagination">
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                (click)="goToPage(currentPage - 1)" 
+                [disabled]="currentPage === 1"
+              >
+                &lt;&lt;
+              </button>
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                *ngFor="let page of getPageNumbers()" 
+                [class.active]="page === currentPage"
+                (click)="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+              <button 
+                type="button" 
+                class="pagination-btn" 
+                (click)="goToPage(currentPage + 1)" 
+                [disabled]="currentPage === totalPages"
+              >
+                &gt;&gt;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Add Appointment Modal -->
+  <div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Thêm lịch hẹn mới</h2>
+        <button class="modal-close" (click)="closeAddModal()">×</button>
+      </div>
+      
+      <form class="appointment-form" (ngSubmit)="addAppointment()">
+        <div class="form-section">
+          <h3 class="section-title">Thông tin lịch hẹn</h3>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">Khoa: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="selectedDepartmentId" 
+                (change)="onDepartmentChange()"
+                name="department"
+                required
+              >
+                <option value="">-- Chọn khoa --</option>
+                <option *ngFor="let dept of departments" [value]="dept.id">
+                  {{ dept.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Bác sĩ: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="selectedDoctorId" 
+                name="doctor"
+                [disabled]="!selectedDepartmentId || filteredDoctors.length === 0"
+                required
+              >
+                <option value="">-- Chọn bác sĩ --</option>
+                <option *ngFor="let doctor of filteredDoctors" [value]="doctor.id">
+                  {{ doctor.name }} {{ doctor.specialty ? '- ' + doctor.specialty : '' }}
+                </option>
+              </select>
+              <small *ngIf="!selectedDepartmentId" class="form-text text-muted">
+                Vui lòng chọn khoa trước
+              </small>
+              <small *ngIf="selectedDepartmentId && filteredDoctors.length === 0" class="form-text text-muted">
+                Không có bác sĩ nào trong khoa này
+              </small>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Bệnh nhân: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="selectedPatientId" 
+                name="patient"
+                required
+              >
+                <option value="">-- Chọn bệnh nhân --</option>
+                <option *ngFor="let patient of patients" [value]="patient.id">
+                  {{ patient.fullName }} {{ patient.phoneNumber ? '- ' + patient.phoneNumber : '' }}
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Thời gian khám: <span class="required">*</span></label>
+              <input 
+                type="datetime-local" 
+                class="form-input" 
+                [(ngModel)]="appointmentDateTime" 
+                name="appointmentDateTime"
+                [min]="minDateTime"
+                required
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Ghi chú:</label>
+              <textarea 
+                class="form-input" 
+                [(ngModel)]="appointmentForm.note" 
+                name="note"
+                rows="3"
+                placeholder="Ghi chú (nếu có)"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="action-btn cancel-btn" (click)="closeAddModal()" [disabled]="isSaving">
+            Hủy
+          </button>
+          <button type="submit" class="action-btn save-btn" [disabled]="isSaving">
+            <span *ngIf="!isSaving">Lưu</span>
+            <span *ngIf="isSaving">Đang lưu...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Update Appointment Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateModal" (click)="closeUpdateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Cập nhật lịch hẹn</h2>
+        <button class="modal-close" (click)="closeUpdateModal()">×</button>
+      </div>
+      
+      <form class="appointment-form" (ngSubmit)="updateAppointment()">
+        <div class="form-section">
+          <h3 class="section-title">Thông tin lịch hẹn</h3>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">Khoa: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="selectedDepartmentId" 
+                (change)="onDepartmentChange()"
+                name="department"
+                required
+              >
+                <option value="">-- Chọn khoa --</option>
+                <option *ngFor="let dept of departments" [value]="dept.id">
+                  {{ dept.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Bác sĩ: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="selectedDoctorId" 
+                name="doctor"
+                [disabled]="!selectedDepartmentId || filteredDoctors.length === 0"
+                required
+              >
+                <option value="">-- Chọn bác sĩ --</option>
+                <option *ngFor="let doctor of filteredDoctors" [value]="doctor.id">
+                  {{ doctor.name }} {{ doctor.specialty ? '- ' + doctor.specialty : '' }}
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Bệnh nhân: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="selectedPatientId" 
+                name="patient"
+                required
+              >
+                <option value="">-- Chọn bệnh nhân --</option>
+                <option *ngFor="let patient of patients" [value]="patient.id">
+                  {{ patient.fullName }} {{ patient.phoneNumber ? '- ' + patient.phoneNumber : '' }}
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Thời gian khám: <span class="required">*</span></label>
+              <input 
+                type="datetime-local" 
+                class="form-input" 
+                [(ngModel)]="appointmentDateTime" 
+                name="appointmentDateTime"
+                [min]="minDateTime"
+                required
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Trạng thái: <span class="required">*</span></label>
+              <select 
+                class="form-input" 
+                [(ngModel)]="appointmentForm.status" 
+                name="status"
+                required
+              >
+                <option *ngFor="let status of statusOptions" [value]="status.value">
+                  {{ status.label }}
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Ghi chú:</label>
+              <textarea 
+                class="form-input" 
+                [(ngModel)]="appointmentForm.note" 
+                name="note"
+                rows="3"
+                placeholder="Ghi chú (nếu có)"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="action-btn cancel-btn" (click)="closeUpdateModal()" [disabled]="isSaving">
+            Hủy
+          </button>
+          <button type="submit" class="action-btn update-btn" [disabled]="isSaving">
+            <span *ngIf="!isSaving">Cập nhật</span>
+            <span *ngIf="isSaving">Đang cập nhật...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail Appointment Modal -->
+  <div class="modal-overlay" *ngIf="showDetailModal" (click)="closeDetailModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Thông Tin Chi Tiết Lịch Hẹn</h3>
+        <button type="button" class="modal-close" (click)="closeDetailModal()">&times;</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedAppointment">
+        <div class="detail-info">
+          <div class="detail-row" *ngIf="selectedAppointment.id">
+            <div class="detail-label">Mã lịch hẹn:</div>
+            <div class="detail-value">{{ selectedAppointment.id }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointment.patientName">
+            <div class="detail-label">Bệnh nhân:</div>
+            <div class="detail-value">{{ selectedAppointment.patientName }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointment.patientPhone">
+            <div class="detail-label">Số điện thoại:</div>
+            <div class="detail-value">{{ selectedAppointment.patientPhone }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointment.doctorName">
+            <div class="detail-label">Bác sĩ:</div>
+            <div class="detail-value">{{ selectedAppointment.doctorName }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointment.departmentName">
+            <div class="detail-label">Khoa:</div>
+            <div class="detail-value">{{ selectedAppointment.departmentName }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointment.appointmentTime">
+            <div class="detail-label">Thời gian khám:</div>
+            <div class="detail-value">{{ formatDate(selectedAppointment.appointmentTime) }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointment.status">
+            <div class="detail-label">Trạng thái:</div>
+            <div class="detail-value">
+              <span class="status-badge" [ngClass]="getStatusClass(selectedAppointment.status)">
+                {{ getStatusLabel(selectedAppointment.status) }}
+              </span>
+            </div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointment.note">
+            <div class="detail-label">Ghi chú:</div>
+            <div class="detail-value">{{ selectedAppointment.note }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointment.createdAt">
+            <div class="detail-label">Ngày tạo:</div>
+            <div class="detail-value">{{ formatDate(selectedAppointment.createdAt) }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointment.updatedAt">
+            <div class="detail-label">Ngày cập nhật:</div>
+            <div class="detail-value">{{ formatDate(selectedAppointment.updatedAt) }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="closeDetailModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+

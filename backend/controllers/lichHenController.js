@@ -311,24 +311,25 @@ exports.tiepNhanTrucTiep = (req, res) => {
 
 // Lấy tất cả lịch hẹn
 exports.getAllLichHen = (req, res) => {
-  // Lấy params từ query string (do frontend gửi qua HttpParams)
-  const { MaNguoiDung, LoaiNguoiDung } = req.query;
+  // Lấy user info từ middleware authMiddleware (
+  const { MaNguoiDung, LoaiNguoiDung } = req.user || {};
 
   console.log('=== GET ALL APPOINTMENTS ===');
   console.log('req.query:', req.query);
+  console.log('req.user:', req.user);
   console.log('MaNguoiDung:', MaNguoiDung, 'type:', typeof MaNguoiDung);
   console.log('LoaiNguoiDung:', LoaiNguoiDung);
   console.log('===========================');
 
-  //  KIỂM TRA ADMIN TRƯỚC - Admin không cần MaNguoiDung
-  if (LoaiNguoiDung === 'Admin' || LoaiNguoiDung === 'QuanTriVien') {
-    console.log('[INFO] Admin user - returning all appointments');
+  //  KIỂM TRA ADMIN, QUẢN TRỊ VIÊN, NHÂN VIÊN - Họ có thể xem tất cả lịch hẹn
+  if (LoaiNguoiDung === 'Admin' || LoaiNguoiDung === 'QuanTriVien' || LoaiNguoiDung === 'NhanVien') {
+    console.log('[INFO] Admin/Staff user - returning all appointments');
     LichHen.getAll((err, results) => {
       if (err) {
         console.error('[ERROR] Database error:', err);
         return res.status(500).json({ error: 'Lỗi lấy danh sách lịch hẹn', details: err });
       }
-      console.log('[SUCCESS] Admin returned', results.length, 'appointments');
+      console.log('[SUCCESS] Admin/Staff returned', results.length, 'appointments');
       res.json(results);
     });
     return;
