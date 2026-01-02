@@ -1,0 +1,14 @@
+<div class="form-container">
+  <h2>🩺 Tạo phiếu khám</h2>
+
+  <label>Triệu chứng:</label>
+  <input [(ngModel)]="symptoms" />
+
+  <label>Chẩn đoán:</label>
+  <input [(ngModel)]="diagnosis" />
+
+  <label>Ghi chú:</label>
+  <textarea [(ngModel)]="note"></textarea>
+
+  <button (click)="createRecord()">💾 Lưu phiếu khám</button>
+</div>

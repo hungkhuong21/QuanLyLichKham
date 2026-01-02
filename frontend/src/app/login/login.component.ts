@@ -35,7 +35,7 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    this.authService.login({ 
+    this.authService.login({
       TenDangNhap: this.TenDangNhap,
       MatKhau: this.MatKhau
     }).subscribe({
@@ -44,20 +44,36 @@ export class LoginComponent implements OnInit {
         console.log('Login response.user:', response.user);
         console.log('Login response.user.MaNguoiDung:', response.user?.MaNguoiDung);
         console.log('Login response.user keys:', response.user ? Object.keys(response.user) : 'null');
+        console.log('Complete user object:', JSON.stringify(response.user, null, 2));
         alert('Đăng nhập thành công!');
 
         // Kiểm tra vai trò để điều hướng
         const user = response.user;
+
         if (user) {
-          // Kiểm tra VaiTroID hoặc LoaiNguoiDung
+          console.log('[DEBUG] User:', user);
+
+          // ADMIN / NHÂN VIÊN
           if (user.VaiTroID === 1 || user.LoaiNguoiDung === 'NhanVien') {
-          this.router.navigate(['/admin']);
+            this.router.navigate(['/admin']);
+
+            // 👨‍⚕️ BÁC SĨ
+          } else if (user.VaiTroID === 2 || user.LoaiNguoiDung === 'BacSi') {
+            this.router.navigate(['/doctor/dashboard']);
+
+            // 👤 BỆNH NHÂN
+          } else if (user.LoaiNguoiDung === 'BenhNhan') {
+            this.router.navigate(['/']);
+
+            // FALLBACK
           } else {
             this.router.navigate(['/']);
           }
+
         } else {
           this.router.navigate(['/']);
         }
+
       },
       error: (error) => {
         console.error('Login failed:', error);
