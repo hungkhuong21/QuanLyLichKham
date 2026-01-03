@@ -67,14 +67,6 @@
               <td>
                 <button class="view-detail-btn" (click)="viewAppointmentDetail(app)">👁️ Chi tiết</button>
                 <button *ngIf="canComplete(app)" class="complete-btn" (click)="completeAppointment(app)">Hoàn thành</button>
-                <td>
-  <!-- Nút tạo phiếu khám -->
-  <button [routerLink]="['/create-record', app.patientId]">🩺 Phiếu khám</button>
-
-  <!-- Nút tạo kết quả khám chỉ hiện nếu đã có recordId -->
-  <button *ngIf="app.recordId" [routerLink]="['/create-result', app.recordId]">📋 Kết quả</button>
-
-
               </td>
             </tr>
           </tbody>
