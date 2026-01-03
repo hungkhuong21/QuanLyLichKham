@@ -62,4 +62,34 @@ export class DoctorDashboardComponent implements OnInit {
     console.log('[Doctor Dashboard] Doctor Name:', name);
   }
 
-  
+  // ================= Load Appointments =================
+  loadAppointments() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const doctorId = currentUser?.MaNguoiDung || currentUser?.MaBacSi || currentUser?.MaTK || currentUser?.id;
+
+    if (!doctorId || doctorId === 0) {
+      alert('Lỗi: Không tìm thấy thông tin bác sĩ. Vui lòng đăng nhập lại.');
+      return;
+    }
+
+    this.appointmentService.getAllAppointments(doctorId, 'BacSi').subscribe({
+      next: data => this.handleAppointments(data),
+      error: err => this.handleLoadError(err)
+    });
+  }
+
+  private handleAppointments(data: Appointment[]) {
+    this.appointments = data || [];
+    this.filterAppointments();
+    console.log('[Doctor Dashboard] Loaded appointments:', data);
+  }
+
+  private handleLoadError(err: any) {
+    console.error('[Doctor Dashboard] Error loading appointments:', err);
+    alert('Lỗi tải lịch hẹn: ' + (err.error?.error || err.message));
+  }
+
+  private getCurrentDoctorId(): number | null {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return currentUser?.MaNguoiDung || currentUser?.MaBacSi || currentUser?.MaTK || currentUser?.id || null;
+  }
