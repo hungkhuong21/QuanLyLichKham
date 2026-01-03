@@ -155,3 +155,44 @@ applyQuickFilter() {
   onSearchInput() {
     this.filterAppointments();
   }
+  // ================= Actions (Accept/Complete/View) =================
+  acceptAppointment(app: Appointment) {
+    this.updateAppointmentStatus(app, 'Đã xác nhận');
+  }
+
+  completeAppointment(app: Appointment) {
+    this.updateAppointmentStatus(app, 'Hoàn thành');
+  }
+
+  private updateAppointmentStatus(app: Appointment, status: string) {
+    if (!confirm(`Xác nhận cập nhật trạng thái: ${status}?`)) return;
+    this.appointmentService.updateAppointment(app.id, { status }).subscribe({
+      next: () => {
+        alert(`Cập nhật trạng thái "${status}" thành công!`);
+        this.loadAppointments();
+      },
+      error: err => alert('Lỗi: ' + (err.error?.error || err.message))
+    });
+  }
+
+  viewAppointmentDetail(app: Appointment) {
+    this.selectedAppointment = app;
+  }
+
+  // ================= Logout =================
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login'], { replaceUrl: true });
+  }
+
+  // ================= Helper =================
+  canAccept(app: Appointment): boolean {
+    const status = (app.status || '').toLowerCase();
+    return status === 'đã đặt' || status === 'chờ xác nhận' || status === 'đổi lịch';
+  }
+
+  canComplete(app: Appointment): boolean {
+    const status = (app.status || '').toLowerCase();
+    return status !== 'hoàn thành' && status !== 'đã hủy' && status !== 'hủy';
+  }
+}
