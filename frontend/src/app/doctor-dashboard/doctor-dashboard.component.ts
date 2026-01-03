@@ -93,3 +93,65 @@ export class DoctorDashboardComponent implements OnInit {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     return currentUser?.MaNguoiDung || currentUser?.MaBacSi || currentUser?.MaTK || currentUser?.id || null;
   }
+  // ================= Filter & Search =================
+  filterAppointments() {
+    let filtered = this.appointments.filter(app => this.isActive(app));
+    filtered = this.applyQuickFilterToList(filtered);
+    filtered = this.applySearchFilters(filtered);
+    this.filteredAppointments = filtered;
+  }
+
+  private isActive(app: Appointment): boolean {
+    const status = (app.status || '').toLowerCase();
+    return status !== 'hoàn thành' && status !== 'đã hủy' && status !== 'hủy';
+  }
+
+  private applyQuickFilterToList(list: Appointment[]): Appointment[] {
+    const now = new Date();
+    if (this.quickFilter === 'today') {
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      return list.filter(a => a.appointmentTime?.split(' ')[0] === todayStr);
+    } else if (this.quickFilter === 'week') {
+      const [first, last] = this.getWeekRange(now);
+      return list.filter(a => a.appointmentTime && new Date(a.appointmentTime) >= first && new Date(a.appointmentTime) <= last);
+    } else if (this.quickFilter === 'month') {
+      const [first, last] = this.getMonthRange(now);
+      return list.filter(a => a.appointmentTime && new Date(a.appointmentTime) >= first && new Date(a.appointmentTime) <= last);
+    }
+    return list;
+  }
+
+  private applySearchFilters(list: Appointment[]): Appointment[] {
+    return list.filter(a => {
+      const matchesName = this.searchPatientName ? (a.patientName || '').toLowerCase().includes(this.searchPatientName.trim().toLowerCase()) : true;
+      const matchesTime = this.searchTime ? (a.appointmentTime || '').includes(this.searchTime.trim()) : true;
+      const matchesStatus = this.searchStatus ? (a.status || '').toLowerCase().includes(this.searchStatus.trim().toLowerCase()) : true;
+      return matchesName && matchesTime && matchesStatus;
+    });
+  }
+
+  private getWeekRange(d: Date): [Date, Date] {
+    const first = new Date(d); first.setDate(d.getDate() - d.getDay()); first.setHours(0,0,0,0);
+    const last = new Date(d); last.setDate(d.getDate() - d.getDay() + 6); last.setHours(23,59,59,999);
+    return [first, last];
+  }
+
+  private getMonthRange(d: Date): [Date, Date] {
+    const first = new Date(d.getFullYear(), d.getMonth(), 1);
+    const last = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23,59,59,999);
+    return [first, last];
+  }
+applyQuickFilter() {
+  if (this.quickFilter === 'all') {
+    this.loadAppointments();
+    return;
+  }
+  this.filterAppointments();
+}
+  searchAppointments() {
+    this.filterAppointments();
+  }
+
+  onSearchInput() {
+    this.filterAppointments();
+  }
