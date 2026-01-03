@@ -180,4 +180,21 @@ export class ReceptionDailyListComponent implements OnInit {
       }
     });
   }
+  
+  printSlip(appointment: ReceptionAppointment): void {
+    window.print();
+    alert(`Đang in phiếu khám cho ${appointment.fullName}...`);
+  }
+
+  viewDetails(appointment: ReceptionAppointment): void {
+    // Navigate to update profile page with appointment ID
+    const appointmentId = parseInt(appointment.appointmentId);
+    if (!isNaN(appointmentId)) {
+      this.router.navigate(['/reception/update-profile'], {
+        queryParams: { appointmentId: appointmentId }
+      });
+    } else {
+      alert('Mã lịch hẹn không hợp lệ.');
+    }
+  }
 }
