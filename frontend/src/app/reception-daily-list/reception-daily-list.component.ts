@@ -127,4 +127,36 @@ export class ReceptionDailyListComponent implements OnInit {
 
     return filtered;
   }
+
+    get paginatedAppointments(): ReceptionAppointment[] {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    return this.filteredAppointments.slice(startIndex, endIndex);
+  }
+
+  updatePagination(): void {
+    this.totalPages = Math.ceil(this.filteredAppointments.length / this.itemsPerPage);
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = this.totalPages;
+    }
+  }
+
+  onFilterChange(): void {
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    for (let i = 1; i <= this.totalPages; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
 }
