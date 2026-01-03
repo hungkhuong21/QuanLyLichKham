@@ -53,6 +53,7 @@ export class ReceptionDailyListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDepartments();
+    this.loadDailyAppointments();
   }
 
   loadDepartments(): void {
@@ -65,6 +66,26 @@ export class ReceptionDailyListComponent implements OnInit {
       },
       error: (error) => {
         console.error('Lỗi load danh sách khoa:', error);
+      }
+    });
+  }
+
+    
+  loadDailyAppointments(): void {
+    this.isLoading = true;
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    this.receptionService.getDailyAppointments(today).subscribe({
+      next: (appointments) => {
+        this.allAppointments = appointments;
+        this.dailyAppointments = appointments;
+        this.updatePagination();
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Lỗi load danh sách lịch hẹn:', error);
+        alert('Có lỗi xảy ra khi tải danh sách lịch hẹn. Vui lòng thử lại.');
+        this.isLoading = false;
       }
     });
   }
