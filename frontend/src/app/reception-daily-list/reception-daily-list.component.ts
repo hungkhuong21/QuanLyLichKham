@@ -159,4 +159,25 @@ export class ReceptionDailyListComponent implements OnInit {
     }
     return pages;
   }
+
+    confirmReception(appointment: ReceptionAppointment): void {
+    const appointmentId = parseInt(appointment.appointmentId);
+    if (isNaN(appointmentId)) {
+      alert('Mã lịch hẹn không hợp lệ.');
+      return;
+    }
+
+    this.receptionService.confirmReception(appointmentId).subscribe({
+      next: () => {
+        appointment.status = 'Đã xác nhận';
+        alert(`Xác nhận tiếp nhận cho ${appointment.fullName} thành công!`);
+        // Reload to get updated data
+        this.loadDailyAppointments();
+      },
+      error: (error) => {
+        console.error('Lỗi xác nhận tiếp nhận:', error);
+        alert('Có lỗi xảy ra khi xác nhận tiếp nhận. Vui lòng thử lại.');
+      }
+    });
+  }
 }
