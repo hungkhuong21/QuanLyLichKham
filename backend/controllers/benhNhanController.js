@@ -45,8 +45,6 @@ exports.deleteBenhNhan = (req, res) => {
     res.json({ message: 'Đã xóa bệnh nhân' });
   });
 };
-<<<<<<< HEAD
-=======
 
 // Tìm kiếm bệnh nhân
 exports.searchBenhNhan = (req, res) => {
@@ -70,4 +68,4 @@ exports.searchBenhNhan = (req, res) => {
     res.json(results);
   });
 };
->>>>>>> b4b6cfeb909f213e1a81c974526a9106ae793471
+
