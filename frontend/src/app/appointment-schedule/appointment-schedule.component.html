@@ -1,0 +1,184 @@
+<div class="appointment-schedule-modal" *ngIf="isOpen">
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+  <div class="modal-container">
+    <div class="schedule-header">
+      <div class="tabs-container">
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab === 'appointments'"
+          (click)="switchTab('appointments')"
+        >
+          Lịch hẹn
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab === 'history'"
+          (click)="switchTab('history')"
+        >
+          Lịch sử đặt lịch khám
+        </button>
+      </div>
+      <div class="date-selector-wrapper">
+        <button 
+          type="button" 
+          class="date-selector-btn" 
+          (click)="toggleDateDropdown(); $event.stopPropagation()"
+          [class.active]="showDateDropdown"
+        >
+          <span class="filter-icon">📅</span>
+          <span class="selected-date">{{ selectedDate }}</span>
+          <span class="date-arrow" [class.rotated]="showDateDropdown">▼</span>
+        </button>
+        <div class="date-dropdown" *ngIf="showDateDropdown" (click)="$event.stopPropagation()">
+          <div class="date-option" 
+               *ngFor="let dateOption of dateOptions"
+               (click)="selectDate(dateOption)"
+               [class.active]="selectedDate === dateOption">
+            <span class="date-option-icon">•</span>
+            <span class="date-option-text">{{ dateOption }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="appointments-list">
+      <div *ngIf="isLoading" class="loading-message">Đang tải lịch hẹn...</div>
+      <div *ngIf="!isLoading && appointments.length === 0" class="empty-message">
+        <p *ngIf="activeTab === 'appointments'">Bạn chưa có lịch hẹn nào.</p>
+        <p *ngIf="activeTab === 'appointments'" class="empty-submessage">Vui lòng đặt lịch hẹn để xem tại đây.</p>
+        <p *ngIf="activeTab === 'history'">Bạn chưa có lịch sử đặt lịch khám nào.</p>
+        <p *ngIf="activeTab === 'history'" class="empty-submessage">Các lịch hẹn đã hoàn thành hoặc đã hủy sẽ hiển thị tại đây.</p>
+      </div>
+      <div class="appointment-item" 
+           [ngClass]="{'appointment-item-horizontal': activeTab === 'appointments'}"
+           *ngFor="let appointment of appointments">
+        <div class="appointment-avatar" [style.background-color]="appointment.avatarBg">
+          <span [style.color]="appointment.avatarColor">{{ appointment.initials }}</span>
+        </div>
+        <div class="appointment-info">
+          <div class="appointment-doctor-name">{{ appointment.doctorName }}</div>
+          <div class="appointment-specialty" [style.color]="appointment.specialtyColor">
+            {{ appointment.specialty }}
+          </div>
+          <div class="appointment-time-status-row" *ngIf="activeTab === 'appointments'">
+            <div class="appointment-time-tag" [style.background-color]="appointment.timeTagBg" [style.color]="appointment.timeTagColor">
+              {{ appointment.time }}
+            </div>
+            <div class="appointment-status" *ngIf="appointment.status">
+              <span class="status-badge" [ngClass]="getStatusClass(appointment.status)">
+                {{ getStatusLabel(appointment.status) }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="appointment-time-tag" *ngIf="activeTab === 'history'" [style.background-color]="appointment.timeTagBg" [style.color]="appointment.timeTagColor">
+          {{ appointment.time }}
+        </div>
+        <div class="appointment-status" *ngIf="activeTab === 'history' && appointment.status">
+          <span class="status-badge" [ngClass]="getStatusClass(appointment.status)">
+            {{ getStatusLabel(appointment.status) }}
+          </span>
+        </div>
+        <div class="schedule-actions" *ngIf="activeTab === 'appointments'">
+          <button 
+            class="btn-change" 
+            (click)="onChangeAppointment(appointment)"
+            [disabled]="appointment.status === 'Đã hủy' || appointment.status === 'Hoàn thành'"
+          >
+            Thay đổi
+          </button>
+          <button 
+            class="btn-cancel" 
+            (click)="onCancelAppointment(appointment)"
+            [disabled]="appointment.status === 'Đã hủy' || appointment.status === 'Hoàn thành'"
+          >
+            Hủy lịch hẹn
+          </button>
+        </div>
+        <div class="schedule-actions" *ngIf="activeTab === 'history'">
+          <span class="history-note" *ngIf="appointment.status === 'Hoàn thành' || (appointment.status && appointment.status.toLowerCase().includes('hoàn thành'))">
+            Lịch hẹn đã hoàn thành - Không thể thay đổi hoặc hủy
+          </span>
+          <span class="history-note cancelled-note" *ngIf="appointment.status === 'Đã hủy' || (appointment.status && appointment.status.toLowerCase().includes('hủy'))">
+            Lịch hẹn đã bị hủy - Không thể thay đổi
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Appointment Modal -->
+<div class="edit-appointment-modal" *ngIf="isEditModalOpen && editingAppointment">
+  <div class="modal-backdrop" (click)="closeEditModal()"></div>
+  <div class="edit-modal-container" (click)="$event.stopPropagation()">
+    <h2 class="edit-modal-title">Thay đổi lịch hẹn</h2>
+    <form class="edit-appointment-form" (ngSubmit)="onSaveChanges()">
+      <div class="form-group">
+        <label for="editSpecialty" class="form-label">Chuyên khoa *</label>
+        <select 
+          class="form-control" 
+          id="editSpecialty" 
+          [(ngModel)]="editSpecialty"
+          name="editSpecialty"
+          (change)="onDepartmentChange()"
+          required 
+        >
+          <option value="">-- Chọn chuyên khoa --</option>
+          <option *ngFor="let dept of departments" [value]="dept.name">
+            {{ dept.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="editDoctorId" class="form-label">Bác sĩ *</label>
+        <select 
+          class="form-control" 
+          id="editDoctorId" 
+          [(ngModel)]="editDoctorId"
+          name="editDoctorId"
+          [disabled]="!editSpecialty || filteredDoctors.length === 0"
+          required 
+        >
+          <option value="">-- Chọn bác sĩ --</option>
+          <option *ngFor="let doctor of filteredDoctors" [value]="doctor.id">
+            {{ doctor.name }} {{ doctor.specialty ? '- ' + doctor.specialty : '' }}
+          </option>
+        </select>
+        <small *ngIf="!editSpecialty" class="form-text text-muted">
+          Vui lòng chọn chuyên khoa trước
+        </small>
+        <small *ngIf="editSpecialty && filteredDoctors.length === 0" class="form-text text-muted">
+          Không có bác sĩ nào trong chuyên khoa này
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="editTime" class="form-label">Thời gian *</label>
+        <input 
+          type="datetime-local" 
+          class="form-control" 
+          id="editTime"
+          [(ngModel)]="editTime"
+          name="editTime"
+          [min]="minDateTime"
+          required 
+        />
+        <small class="form-text text-info" style="display: block; margin-top: 0.25rem; color: #2563eb; font-weight: 500;">
+          ⏰ Giờ làm việc: Thứ 2-6: 7:00 - 17:00, Thứ 7: 7:00 - 12:00, Chủ nhật: Nghỉ. Nếu cập nhật lịch hôm nay, vui lòng đặt trước ít nhất 2 giờ.
+        </small>
+      </div>
+
+      <div class="edit-modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeEditModal()" [disabled]="isSaving">
+          Hủy
+        </button>
+        <button type="submit" class="btn-save" [disabled]="isSaving">
+          <span *ngIf="!isSaving">Lưu thay đổi</span>
+          <span *ngIf="isSaving">Đang lưu...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
