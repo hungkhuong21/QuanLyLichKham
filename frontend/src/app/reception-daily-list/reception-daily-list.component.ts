@@ -89,4 +89,42 @@ export class ReceptionDailyListComponent implements OnInit {
       }
     });
   }
+    get filteredAppointments(): ReceptionAppointment[] {
+    let filtered = [...this.allAppointments];
+
+    // Filter by department
+    if (this.selectedDepartment) {
+      filtered = filtered.filter(apt => {
+        return apt.departmentId && apt.departmentId.toString() === this.selectedDepartment;
+      });
+    }
+
+    // Filter by status
+    if (this.selectedStatus) {
+      filtered = filtered.filter(apt => {
+        const statusMap: { [key: string]: string } = {
+          'cho-xac-nhan': 'Chờ xác nhận',
+          'da-xac-nhan': 'Đã xác nhận',
+          'dang-kham': 'Đang khám',
+          'hoan-thanh': 'Hoàn thành',
+          'huy': 'Hủy',
+          'da-huy': 'Đã hủy'
+        };
+        const targetStatus = statusMap[this.selectedStatus];
+        return apt.status && apt.status.toLowerCase().includes(targetStatus.toLowerCase());
+      });
+    }
+
+    // Filter by search query
+    if (this.searchQuery.trim()) {
+      const query = this.searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(apt =>
+        apt.appointmentId.toLowerCase().includes(query) ||
+        apt.fullName.toLowerCase().includes(query) ||
+        (apt.phoneNumber && apt.phoneNumber.includes(query))
+      );
+    }
+
+    return filtered;
+  }
 }
