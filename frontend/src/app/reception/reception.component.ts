@@ -89,4 +89,11 @@ export class ReceptionComponent implements OnInit {
       }
     });
   }
+
+    printSlip(): void {
+    if (this.foundAppointment) {
+      window.print();
+      alert('Đang in phiếu khám...');
+    }
+  }
 }
