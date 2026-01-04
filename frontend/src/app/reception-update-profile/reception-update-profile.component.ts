@@ -161,3 +161,63 @@ export class ReceptionUpdateProfileComponent implements OnInit {
     this.loadDepartments();
     this.loadDoctors();
   }
+// APPOINTMENT & PATIENT DATA HANDLING
+
+
+  loadAppointmentData(): void {
+    if (!this.appointmentId) return;
+
+    this.isLoading = true;
+    this.receptionService.getAppointmentById(this.appointmentId).subscribe({
+      next: (appointment) => {
+        this.appointment = appointment;
+        this.patientId = appointment.patientId || null;
+
+        if (this.patientId) {
+          this.loadPatientData(this.patientId);
+        } else {
+          this.populateFromAppointment(appointment);
+        }
+
+        this.isLoading = false;
+      },
+      error: () => {
+        alert('Failed to load appointment data');
+        this.isLoading = false;
+      }
+    });
+  }
+
+  loadPatientData(patientId: number): void {
+    this.receptionService.getPatientById(patientId).subscribe({
+      next: (patient: any) => {
+        this.patientData = {
+          ...this.patientData,
+          fullName: patient.HoTen || '',
+          gender: patient.GioiTinh || '',
+          dateOfBirth: patient.NgaySinh || '',
+          idCard: patient.CMND_CCCD || '',
+          phoneNumber: patient.SoDienThoai || '',
+          address: patient.DiaChi || ''
+        };
+        this.originalPatientData = { ...this.patientData };
+      },
+      error: () => {
+        if (this.appointment) {
+          this.populateFromAppointment(this.appointment);
+        }
+      }
+    });
+  }
+
+  populateFromAppointment(appointment: ReceptionAppointment): void {
+    this.patientData = {
+      ...this.patientData,
+      fullName: appointment.fullName || '',
+      gender: appointment.gender || '',
+      dateOfBirth: appointment.dateOfBirth || '',
+      idCard: appointment.idCard || '',
+      phoneNumber: appointment.phoneNumber || '',
+      recordStatus: appointment.status || 'Chờ tiếp nhận'
+    };
+  }
