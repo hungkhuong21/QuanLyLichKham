@@ -198,4 +198,31 @@ export class HomeComponent implements OnInit {
       }
     });
   }
-  
+  //  APPOINTMENT SCHEDULE & CONTACT MODALS
+
+  isAppointmentScheduleOpen: boolean = false;
+  isContactModalOpen: boolean = false;
+
+  openAppointmentSchedule(): void {
+    this.isAppointmentScheduleOpen = true;
+  }
+
+  closeAppointmentSchedule(): void {
+    this.isAppointmentScheduleOpen = false;
+  }
+
+  contactNow(): void {
+    this.isContactModalOpen = true;
+  }
+
+  closeContactModal(): void {
+    this.isContactModalOpen = false;
+  }
+
+  openPhoneDialer(): void {
+    window.location.href = 'tel:19001234';
+  }
+
+  openEmail(): void {
+    window.location.href = 'mailto:info@healthcare.com';
+  }
