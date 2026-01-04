@@ -77,6 +77,92 @@ export class HomeComponent implements OnInit {
     });
   }
 
+//  APPOINTMENT FORM – VALIDATION & SUBMISSION
+  
+  appointmentName: string = '';
+  appointmentPhone: string = '';
+  appointmentSpecialty: string = '';
+  appointmentDoctor: string = '';
+  appointmentTime: string = '';
+  isSubmittingAppointment: boolean = false;
+
+  onAppointmentSubmit(): void {
+    if (this.isSubmittingAppointment) return;
+
+    // Validate name
+    if (!this.appointmentName.trim() || this.appointmentName.trim().length < 2) {
+      alert('Tên không hợp lệ');
+      return;
+    }
+
+    // Validate phone
+    const phone = this.appointmentPhone.trim().replace(/\s+/g, '');
+    if (!/^0\d{9,10}$/.test(phone) || /^0+$/.test(phone)) {
+      alert('Số điện thoại không hợp lệ');
+      return;
+    }
+    this.appointmentPhone = phone;
+
+    // Validate required fields
+    if (!this.appointmentSpecialty || !this.appointmentDoctor || !this.appointmentTime) {
+      alert('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    // Parse datetime-local
+    const match = this.appointmentTime.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!match) {
+      alert('Thời gian không hợp lệ');
+      return;
+    }
+
+    const year = parseInt(match[1]);
+    const month = parseInt(match[2]) - 1;
+    const day = parseInt(match[3]);
+    const hours = parseInt(match[4]);
+    const minutes = parseInt(match[5]);
+
+    const appointmentDateTime = new Date(year, month, day, hours, minutes, 0);
+    if (appointmentDateTime < new Date()) {
+      alert('Không được đặt lịch quá khứ');
+      return;
+    }
+
+    // Submit appointment
+    this.isSubmittingAppointment = true;
+
+    const appointmentData = {
+      doctorId: parseInt(this.appointmentDoctor),
+      appointmentTime: `${match[1]}-${match[2]}-${match[3]} ${match[4]}:${match[5]}:00`,
+      note: `Đặt lịch bởi ${this.appointmentName} (${this.appointmentPhone})`,
+      HoTen: this.appointmentName.trim(),
+      SoDienThoai: this.appointmentPhone.trim()
+    };
+
+    this.appointmentService.createAppointment(appointmentData).subscribe({
+      next: () => {
+        this.isSubmittingAppointment = false;
+        alert('Đặt lịch thành công!');
+        this.resetAppointmentForm();
+      },
+      error: (error) => {
+        this.isSubmittingAppointment = false;
+        alert('Lỗi đặt lịch: ' + (error.message || 'Thử lại sau'));
+      }
+    });
+  }
+
+  resetAppointmentForm(): void {
+    this.appointmentName = '';
+    this.appointmentPhone = '';
+    this.appointmentSpecialty = '';
+    this.appointmentDoctor = '';
+    this.appointmentTime = '';
+  }
+
+  onSpecialtyChange(): void {
+    this.appointmentDoctor = '';
+  }
 
 
   
