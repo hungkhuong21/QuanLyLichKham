@@ -96,5 +96,48 @@ export class ReceptionUpdateProfileComponent implements OnInit {
     private router: Router
   ) {}
 
-}
+// LOOKUP DATA (DEPARTMENTS & DOCTORS)
+   
+
+  get filteredDoctors() {
+    if (!this.patientData.department) {
+      return [];
+    }
+    const deptId = parseInt(this.patientData.department);
+    return this.allDoctors.filter(d => d.departmentId === deptId);
+  }
+
+  loadDepartments(): void {
+    this.departmentService.getAllDepartments().subscribe({
+      next: (depts) => {
+        this.specialties = depts.map(dept => ({
+          id: dept.id.toString(),
+          name: dept.name
+        }));
+      },
+      error: (error) => {
+        console.error('Failed to load departments:', error);
+      }
+    });
+  }
+
+  loadDoctors(): void {
+    this.doctorService.getAllDoctors().subscribe({
+      next: (docs) => {
+        this.allDoctors = docs.map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          departmentId: doc.departmentId || 0
+        }));
+        this.doctors = this.allDoctors;
+      },
+      error: (error) => {
+        console.error('Failed to load doctors:', error);
+      }
+    });
+  }
+
+  onDepartmentChange(): void {
+    this.patientData.doctor = '';
+  }
    
