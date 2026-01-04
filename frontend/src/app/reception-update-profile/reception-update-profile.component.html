@@ -1,0 +1,332 @@
+<div class="reception-update-profile-page">
+  <app-header></app-header>
+
+  <!-- Navigation Header -->
+  <div class="reception-nav">
+    <div class="reception-nav-container">
+      <a routerLink="/reception" routerLinkActive="active" class="nav-link-item">Tiếp Nhận Theo Lịch</a>
+      <a routerLink="/reception/direct" routerLinkActive="active" class="nav-link-item">Tiếp Nhận Trực Tiếp</a>
+      <a routerLink="/reception/update-profile" routerLinkActive="active" class="nav-link-item">Cập Nhật Hồ Sơ</a>
+      <a routerLink="/reception/daily-list" routerLinkActive="active" class="nav-link-item">Danh Sách Trong Ngày</a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="reception-main">
+    <div class="reception-container">
+      
+      <!-- Patient Update Form -->
+      <div class="update-form-section">
+        <div class="update-form-card">
+          <h2 class="form-title">Cập Nhật Hồ Sơ Bệnh Nhân</h2>
+          
+          <form class="update-form" (ngSubmit)="onSubmit()">
+            <!-- Personal Information Section -->
+            <div class="form-section">
+              <h3 class="section-title">Thông tin cá nhân</h3>
+              <div class="form-grid">
+                <div class="form-row">
+                  <label class="form-label">Họ và tên:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.fullName" 
+                    name="fullName"
+                    required
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Giới tính:</label>
+                  <select 
+                    class="form-input" 
+                    [(ngModel)]="patientData.gender" 
+                    name="gender"
+                    required
+                  >
+                    <option value="" disabled selected>Chọn giới tính</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Ngày sinh:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.dateOfBirth" 
+                    name="dateOfBirth"
+                    placeholder="DD/MM/YYYY"
+                    required
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">CMND / CCCD:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.idCard" 
+                    name="idCard"
+                    required
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Số điện thoại:</label>
+                  <input 
+                    type="tel" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.phoneNumber" 
+                    name="phoneNumber"
+                    required
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Email (nếu có):</label>
+                  <input 
+                    type="email" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.email" 
+                    name="email"
+                    placeholder="example@email.com"
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Địa chỉ liên hệ:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.address" 
+                    name="address"
+                    required
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Dân tộc:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.ethnicity" 
+                    name="ethnicity"
+                    required
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Quốc tịch:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.nationality" 
+                    name="nationality"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Examination Information Section -->
+            <div class="form-section">
+              <h3 class="section-title">Thông tin khám bệnh / tiếp nhận</h3>
+              <div class="form-grid">
+                <div class="form-row">
+                  <label class="form-label">Mã tiếp nhận:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.receptionCode" 
+                    name="receptionCode"
+                    required
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Khoa khám:</label>
+                  <select 
+                    class="form-input" 
+                    [(ngModel)]="patientData.department" 
+                    name="department"
+                    (change)="onDepartmentChange()"
+                    required
+                  >
+                    <option value="" disabled selected>Chọn khoa khám</option>
+                    <option *ngFor="let specialty of specialties" [value]="specialty.id">
+                      {{ specialty.name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Bác sĩ phụ trách:</label>
+                  <select 
+                    class="form-input" 
+                    [(ngModel)]="patientData.doctor" 
+                    name="doctor"
+                    [disabled]="!patientData.department"
+                    required
+                  >
+                    <option value="" disabled selected>
+                      {{ patientData.department ? 'Chọn bác sĩ' : 'Chọn khoa khám trước' }}
+                    </option>
+                    <option *ngFor="let doctor of filteredDoctors" [value]="doctor.id">
+                      {{ doctor.name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Ngày hẹn:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.appointmentDate" 
+                    name="appointmentDate"
+                    placeholder="DD/MM/YYYY"
+                    required
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Giờ hẹn:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.appointmentTime" 
+                    name="appointmentTime"
+                    placeholder="HH:MM"
+                    required
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Mã số bệnh án (nếu có):</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.medicalRecordNumber" 
+                    name="medicalRecordNumber"
+                    placeholder="Nhập mã số bệnh án"
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Lý do khám / triệu chứng ban đầu:</label>
+                  <textarea 
+                    class="form-input form-textarea" 
+                    [(ngModel)]="patientData.reason" 
+                    name="reason"
+                    rows="3"
+                    required
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Medical Information Section -->
+            <div class="form-section">
+              <h3 class="section-title">Thông tin y tế</h3>
+              <div class="form-grid">
+                <div class="form-row">
+                  <label class="form-label">Tiền sử bệnh lý:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.medicalHistory" 
+                    name="medicalHistory"
+                    placeholder="Nhập tiền sử bệnh lý"
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Dị ứng thuốc:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.drugAllergies" 
+                    name="drugAllergies"
+                    placeholder="Nhập thông tin dị ứng thuốc"
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Bảo hiểm y tế:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.healthInsurance" 
+                    name="healthInsurance"
+                    placeholder="Nhập số bảo hiểm y tế"
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Tình trạng sức khỏe gần nhất:</label>
+                  <textarea 
+                    class="form-input form-textarea" 
+                    [(ngModel)]="patientData.latestHealthStatus" 
+                    name="latestHealthStatus"
+                    rows="3"
+                    placeholder="Nhập tình trạng sức khỏe gần nhất"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Administrative Information Section -->
+            <div class="form-section">
+              <h3 class="section-title">Thông tin hành chính</h3>
+              <div class="form-grid">
+                <div class="form-row">
+                  <label class="form-label">Trạng thái hồ sơ:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.recordStatus" 
+                    name="recordStatus"
+                    readonly
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Ngày tạo hồ sơ:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.recordCreationDate" 
+                    name="recordCreationDate"
+                    readonly
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Người tạo:</label>
+                  <input 
+                    type="text" 
+                    class="form-input" 
+                    [(ngModel)]="patientData.creator" 
+                    name="creator"
+                    readonly
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-section">
+              <div class="pagination">
+                <button type="button" class="pagination-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"><<</button>
+                <button 
+                  type="button" 
+                  class="pagination-btn" 
+                  *ngFor="let page of pages" 
+                  [class.active]="page === currentPage"
+                  (click)="goToPage(page)"
+                >
+                  {{ page }}
+                </button>
+                <button type="button" class="pagination-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">>></button>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+              <button type="submit" class="action-btn save-btn">Lưu</button>
+              <button type="button" class="action-btn cancel-btn" (click)="onCancel()">Hủy Bỏ</button>
+              <button type="button" class="action-btn print-btn" (click)="onPrint()">In Hồ Sơ</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <app-footer></app-footer>
+</div>
