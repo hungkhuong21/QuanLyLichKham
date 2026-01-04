@@ -164,5 +164,38 @@ export class HomeComponent implements OnInit {
     this.appointmentDoctor = '';
   }
 
+//  DOCTOR SEARCH FUNCTIONALITY
 
+  doctorName: string = '';
+  doctorDepartmentId: string = '';
+  searchResults: Doctor[] = [];
+  isSearching: boolean = false;
+  hasSearched: boolean = false;
+
+  onDoctorSearch(): void {
+    this.isSearching = true;
+    this.hasSearched = true;
+
+    const searchParams: { name?: string; departmentId?: number } = {};
+
+    if (this.doctorName.trim()) {
+      searchParams.name = this.doctorName.trim();
+    }
+
+    if (this.doctorDepartmentId.trim()) {
+      searchParams.departmentId = parseInt(this.doctorDepartmentId);
+    }
+
+    this.doctorService.searchDoctors(searchParams).subscribe({
+      next: (doctors) => {
+        this.searchResults = doctors;
+        this.isSearching = false;
+      },
+      error: (error) => {
+        this.isSearching = false;
+        this.searchResults = [];
+        alert('Lỗi tìm kiếm: ' + (error.message || 'Thử lại'));
+      }
+    });
+  }
   
