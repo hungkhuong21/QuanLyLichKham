@@ -102,4 +102,89 @@ export class ReceptionDirectComponent implements OnInit {
     // Reset doctor selection when department changes
     this.patientForm.doctor = '';
   }
+
+    onSubmit(): void {
+    if (!this.patientForm.fullName || !this.patientForm.dateOfBirth || !this.patientForm.gender || 
+        !this.patientForm.phoneNumber || !this.patientForm.idCard || !this.patientForm.address ||
+        !this.patientForm.department || !this.patientForm.doctor || !this.patientForm.examinationType) {
+      alert('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      return;
+    }
+
+    // Format ngày sinh từ DD/MM/YYYY sang YYYY-MM-DD
+    let formattedDateOfBirth = '';
+    if (this.patientForm.dateOfBirth) {
+      const parts = this.patientForm.dateOfBirth.split('/');
+      if (parts.length === 3) {
+        formattedDateOfBirth = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      } else {
+        formattedDateOfBirth = this.patientForm.dateOfBirth;
+      }
+    }
+
+    // Tạo bệnh nhân mới
+    const patientData = {
+      HoTen: this.patientForm.fullName,
+      NgaySinh: formattedDateOfBirth || undefined,
+      GioiTinh: this.patientForm.gender,
+      SoDienThoai: this.patientForm.phoneNumber,
+      CMND_CCCD: this.patientForm.idCard,
+      DiaChi: this.patientForm.address
+    };
+
+    this.receptionService.createPatient(patientData).subscribe({
+      next: (response) => {
+        console.log('Tạo bệnh nhân thành công:', response);
+        const patientId = response.MaBenhNhan || response.id;
+        
+        if (!patientId) {
+          alert('Tạo bệnh nhân thành công nhưng không có ID. Vui lòng thử lại.');
+          return;
+        }
+
+        // Tạo lịch hẹn với thời gian hiện tại (tiếp nhận trực tiếp)
+        const now = new Date();
+        const appointmentTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        
+        const appointmentData = {
+          doctorId: parseInt(this.patientForm.doctor),
+          appointmentTime: appointmentTime,
+          note: this.patientForm.notes || (this.patientForm.examinationType ? `Loại khám: ${this.patientForm.examinationType}` : '')
+        };
+
+        // Tạo lịch hẹn với MaBenhNhan
+        this.appointmentService.createAppointment(appointmentData, patientId).subscribe({
+          next: (appointmentResponse) => {
+            console.log('Tạo lịch hẹn thành công:', appointmentResponse);
+            alert('Tạo hồ sơ thành công! Bệnh nhân đã được thêm vào danh sách chờ.');
+            
+            // Reset form
+            this.patientForm = {
+              fullName: '',
+              dateOfBirth: '',
+              gender: '',
+              phoneNumber: '',
+              idCard: '',
+              address: '',
+              contactPerson: '',
+              department: '',
+              doctor: '',
+              examinationType: '',
+              notes: ''
+            };
+          },
+          error: (appointmentError) => {
+            console.error('Lỗi tạo lịch hẹn:', appointmentError);
+            const errorMsg = appointmentError.error?.error || appointmentError.message || 'Có lỗi xảy ra khi tạo lịch hẹn.';
+            alert('Đã tạo bệnh nhân thành công nhưng có lỗi khi tạo lịch hẹn: ' + errorMsg);
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Lỗi tạo bệnh nhân:', error);
+        const errorMessage = error.error?.error || error.message || 'Có lỗi xảy ra khi tạo hồ sơ.';
+        alert('Lỗi: ' + errorMessage);
+      }
+    });
+  }
 }
