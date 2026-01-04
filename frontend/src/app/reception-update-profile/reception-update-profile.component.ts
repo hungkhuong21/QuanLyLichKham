@@ -140,4 +140,24 @@ export class ReceptionUpdateProfileComponent implements OnInit {
   onDepartmentChange(): void {
     this.patientData.doctor = '';
   }
-   
+   // ROUTING & INITIALIZATION
+
+
+  ngOnInit(): void {
+    this.route.params.subscribe(params => {
+      if (params['id']) {
+        this.appointmentId = parseInt(params['id']);
+        this.loadAppointmentData();
+      }
+    });
+
+    this.route.queryParams.subscribe(params => {
+      if (params['appointmentId']) {
+        this.appointmentId = parseInt(params['appointmentId']);
+        this.loadAppointmentData();
+      }
+    });
+
+    this.loadDepartments();
+    this.loadDoctors();
+  }
