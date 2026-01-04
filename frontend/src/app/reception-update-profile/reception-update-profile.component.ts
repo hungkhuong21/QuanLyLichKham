@@ -221,3 +221,44 @@ export class ReceptionUpdateProfileComponent implements OnInit {
       recordStatus: appointment.status || 'Chờ tiếp nhận'
     };
   }
+// UI ACTIONS & SUBMISSION
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  onSubmit(): void {
+    if (!this.patientId) return;
+
+    this.isLoading = true;
+    this.receptionService.updatePatient(this.patientId, {
+      HoTen: this.patientData.fullName,
+      GioiTinh: this.patientData.gender,
+      SoDienThoai: this.patientData.phoneNumber,
+      CMND_CCCD: this.patientData.idCard,
+      DiaChi: this.patientData.address
+    }).subscribe({
+      next: () => {
+        alert('Update successful');
+        this.router.navigate(['/reception/daily-list']);
+        this.isLoading = false;
+      },
+      error: () => {
+        alert('Update failed');
+        this.isLoading = false;
+      }
+    });
+  }
+
+  onCancel(): void {
+    if (this.originalPatientData) {
+      this.patientData = { ...this.originalPatientData };
+    }
+  }
+
+  onPrint(): void {
+    window.print();
+  }
+}
