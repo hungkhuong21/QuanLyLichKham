@@ -82,4 +82,24 @@ export class ReceptionDirectComponent implements OnInit {
       }
     });
   }
+    loadDoctors(): void {
+    this.doctorService.getAllDoctors().subscribe({
+      next: (docs) => {
+        this.allDoctors = docs.map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          departmentId: doc.departmentId || 0
+        }));
+        this.doctors = this.allDoctors;
+      },
+      error: (error) => {
+        console.error('Lỗi load danh sách bác sĩ:', error);
+      }
+    });
+  }
+
+  onDepartmentChange(): void {
+    // Reset doctor selection when department changes
+    this.patientForm.doctor = '';
+  }
 }
