@@ -226,3 +226,61 @@ export class HomeComponent implements OnInit {
   openEmail(): void {
     window.location.href = 'mailto:info@healthcare.com';
   }
+  //  SERVICES SECTION & HELPER FUNCTIONS
+  services = [
+    { title: 'Điều trị nha khoa', description: 'Chăm sóc răng miệng toàn diện.', image: '🦷', icon: 'tooth' },
+    { title: 'Điều trị xương khớp', description: 'Chẩn đoán và điều trị xương khớp.', image: '🦴', icon: 'bone' },
+    { title: 'Chẩn đoán y khoa', description: 'Chẩn đoán chính xác với công nghệ tiên tiến.', image: '🏥', icon: 'diagnosis' },
+    { title: 'Tim mạch', description: 'Khám và điều trị bệnh lý tim mạch.', image: '❤️', icon: 'cardiology' },
+    { title: 'Phẫu thuật', description: 'Thực hiện các ca phẫu thuật an toàn.', image: '⚕️', icon: 'surgery' },
+    { title: 'Chăm sóc mắt', description: 'Khám và điều trị các vấn đề về mắt.', image: '👁️', icon: 'eye-care' }
+  ];
+
+  formatDateTime(datetime: string): string {
+    return datetime;
+  }
+
+  private formatDateTimeLocal(date: Date): string {
+    return '';
+  }
+
+  private getDayOfWeek(date: Date): number {
+    return date.getDay();
+  }
+
+  private getDayName(dayOfWeek: number): string {
+    const days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    return days[dayOfWeek];
+  }
+
+  private getWorkingHoursStart(dayOfWeek: number): number | null {
+    return 7;
+  }
+
+  private getWorkingHoursEnd(dayOfWeek: number): number | null {
+    return 17;
+  }
+
+  private isWithinWorkingHours(date: Date): boolean {
+    return true;
+  }
+
+  private hasEnoughBuffer(date: Date): boolean {
+    return true;
+  }
+
+  getWorkingHoursDescription(): string {
+    return 'Thứ 2-6: 7:00 - 17:00 | Thứ 7: 7:00 - 12:00 | Chủ nhật: Nghỉ';
+  }
+  get filteredDoctors(): Doctor[] {
+  if (!this.appointmentSpecialty) return [];
+  const departmentId = Number(this.appointmentSpecialty);
+  return this.doctors.filter(d => d.departmentId === departmentId);
+}
+
+get minDateTime(): string {
+  const now = new Date();
+  now.setHours(now.getHours() + 2); 
+  return now.toISOString().slice(0, 16);
+}
+}
