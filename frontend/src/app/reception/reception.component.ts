@@ -60,5 +60,33 @@ export class ReceptionComponent implements OnInit {
       }
     });
   }
+  confirmReception(): void {
+    if (!this.foundAppointment) return;
 
+    const appointmentId = parseInt(this.foundAppointment.appointmentId);
+    if (isNaN(appointmentId)) {
+      alert('Mã lịch hẹn không hợp lệ.');
+      return;
+    }
+
+    // Kiểm tra nếu đã hoàn thành rồi
+    if (this.foundAppointment.status === 'Hoàn thành') {
+      alert('Lịch hẹn này đã được tiếp nhận hoàn thành.');
+      return;
+    }
+
+    this.receptionService.confirmReception(appointmentId).subscribe({
+      next: () => {
+        if (this.foundAppointment) {
+          this.foundAppointment.status = 'Hoàn thành';
+        }
+        alert('Tiếp nhận thành công! Lịch hẹn đã được đánh dấu hoàn thành.');
+      },
+      error: (error) => {
+        console.error('Lỗi xác nhận tiếp nhận:', error);
+        const errorMessage = error.error?.error || error.message || 'Có lỗi xảy ra khi tiếp nhận. Vui lòng thử lại.';
+        alert('Lỗi: ' + errorMessage);
+      }
+    });
+  }
 }
