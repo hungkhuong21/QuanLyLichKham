@@ -56,7 +56,13 @@ export class ReceptionDirectComponent implements OnInit {
     private appointmentService: AppointmentService
   ) {}
 
-
+  get filteredDoctors() {
+    if (!this.patientForm.department) {
+      return [];
+    }
+    const deptId = parseInt(this.patientForm.department);
+    return this.allDoctors.filter(doctor => doctor.departmentId === deptId);
+  }
 
   ngOnInit(): void {
     this.loadDepartments();
@@ -92,6 +98,11 @@ export class ReceptionDirectComponent implements OnInit {
       }
     });
   }
-
+  
+  onDepartmentChange(): void {
+    // Reset doctor selection when department changes
+    this.patientForm.doctor = '';
+  }
+  
 
 }
