@@ -45,5 +45,37 @@ export class ReceptionDirectComponent implements OnInit {
     notes: ''
   };
 
- 
+  specialties: { id: string; name: string }[] = [];
+  doctors: { id: number; name: string; departmentId: number }[] = [];
+  allDoctors: { id: number; name: string; departmentId: number }[] = [];
+
+  constructor(
+    private receptionService: ReceptionService,
+    private departmentService: DepartmentService,
+    private doctorService: DoctorService,
+    private appointmentService: AppointmentService
+  ) {}
+
+
+
+  ngOnInit(): void {
+    this.loadDepartments();
+    this.loadDoctors();
+  }
+
+  loadDepartments(): void {
+    this.departmentService.getAllDepartments().subscribe({
+      next: (depts) => {
+        this.specialties = depts.map(dept => ({
+          id: dept.id.toString(),
+          name: dept.name
+        }));
+      },
+      error: (error) => {
+        console.error('Lỗi load danh sách khoa:', error);
+      }
+    });
+  }
+
+
 }
