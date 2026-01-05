@@ -120,10 +120,33 @@ loadAppointments(): void {
   // Lấy thông tin user hiện tại từ AuthService
   const currentUser = this.authService.currentUserValue;
   console.log('🔵 Current user from AuthService:', currentUser);
+  console.log('🔵 CurrentUser type:', typeof currentUser);
+  console.log('🔵 CurrentUser keys:', currentUser ? Object.keys(currentUser) : 'NULL');
   
   if (!currentUser) {
     // Chưa đăng nhập
     console.warn('🔴 No user found, cannot load appointments');
+    console.log('🔴 Checking localStorage directly...');
+    
+    // Fallback: Check localStorage directly
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem('currentUser');
+      console.log('🔴 localStorage.currentUser:', savedUser);
+      if (savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser);
+          console.log('🔴 Parsed user from localStorage:', parsedUser);
+          // Try again with parsed user
+          // Don't call loadAppointments again to avoid infinite loop
+          alert('Vui lòng refresh page để tải lại dữ liệu.');
+          this.isLoading = false;
+          return;
+        } catch (e) {
+          console.error('🔴 Error parsing localStorage user:', e);
+        }
+      }
+    }
+    
     alert('Vui lòng đăng nhập để xem lịch hẹn.');
     this.isLoading = false;
     this.closeModal();
@@ -141,6 +164,30 @@ loadAppointments(): void {
                      currentUser.LoaiNguoiDung === 'Admin' || 
                      currentUser.LoaiNguoiDung === 'QuanTriVien' ||
                      currentUser.LoaiNguoiDung === 'NhanVien';
+  // Lấy LoaiNguoiDung từ user - BẮTBUỘC phải có giá trị
+  let loaiNguoiDung = currentUser.LoaiNguoiDung ?? currentUser.role;
+  console.log('🔵 LoaiNguoiDung from user:', loaiNguoiDung);
+  console.log('🔵 currentUser.LoaiNguoiDung:', currentUser.LoaiNguoiDung);
+  console.log('🔵 currentUser.role:', currentUser.role);
+  
+  // Nếu vẫn không có, default là Admin (để backend xử lý)
+  if (!loaiNguoiDung) {
+    console.warn('⚠️ No LoaiNguoiDung found, defaulting to Admin');
+    loaiNguoiDung = 'Admin';
+  }
+  
+  // Map NhanVien → Admin (backend không hỗ trợ NhanVien)
+  if (loaiNguoiDung === 'NhanVien') {
+    console.warn('⚠️ Mapping NhanVien → Admin for backend compatibility');
+    loaiNguoiDung = 'Admin';
+  }
+  
+  console.log('🔵 Final LoaiNguoiDung:', loaiNguoiDung);
+  
+  // Kiểm tra xem user có quyền xem tất cả lịch hẹn không (Admin, QuanTriVien, NhanVien)
+  const canViewAll = currentUser.role === 'admin' || 
+                     loaiNguoiDung === 'Admin' || 
+                     loaiNguoiDung === 'QuanTriVien';
   
   console.log('Loading appointments for user:', {
     canViewAll,
@@ -155,6 +202,9 @@ loadAppointments(): void {
   // - BenhNhan/BacSi: Cần MaNguoiDung để lọc (backend vẫn cần MaNguoiDung)
   let maNguoiDungParam: number | undefined;
   let loaiNguoiDungParam: string | undefined;
+  let loaiNguoiDungParam: string | undefined = loaiNguoiDung; // Initialize with loaiNguoiDung
+  
+  console.log('🔵 Initial loaiNguoiDungParam:', loaiNguoiDungParam);
   
   if (canViewAll) {
     // Admin/QuanTriVien/NhanVien: Chỉ gửi LoaiNguoiDung, không cần MaNguoiDung
@@ -191,6 +241,28 @@ loadAppointments(): void {
     alert('Lỗi: Loại người dùng không được hỗ trợ: ' + loaiNguoiDung);
     this.isLoading = false;
     return;
+    // Lấy MaNguoiDung từ user - ưu tiên thử tất cả các field có thể chứa ID
+    let maNguoiDung = currentUser.MaNguoiDung ?? currentUser.MaTK ?? currentUser.id ?? currentUser.userId;
+    
+    // Nếu MaNguoiDung = 0 hoặc null, cũng cần gửi lên (backend sẽ xử lý)
+    // Chỉ bỏ qua khi thực sự không có giá trị nào
+    if (maNguoiDung !== null && maNguoiDung !== undefined && maNguoiDung !== '') {
+      maNguoiDungParam = Number(maNguoiDung);
+      loaiNguoiDungParam = loaiNguoiDung;
+      console.log(`[INFO] ${loaiNguoiDung} user with ID:`, maNguoiDungParam);
+    } else {
+      console.error('ERROR: BenhNhan/BacSi user but no ID found!', currentUser);
+      // Không throw error, let backend handle it
+      // Vẫn cố gắng load appointments mà không MaNguoiDung
+      loaiNguoiDungParam = loaiNguoiDung;
+      maNguoiDungParam = undefined;
+      console.warn('[WARNING] Loading appointments without MaNguoiDung - backend may return 401');
+    }
+  } else {
+    // Loại người dùng không được hỗ trợ - default to loaiNguoiDung
+    console.warn('WARNING: Unsupported user type, will send as-is to backend:', loaiNguoiDung);
+    loaiNguoiDungParam = loaiNguoiDung;
+    maNguoiDungParam = undefined;
   }
   
   console.log('🔵 Calling getAllAppointments with params:', {
@@ -219,6 +291,13 @@ loadAppointments(): void {
         errorMessage = error.error.error;
       } else if (error.status === 401) {
         errorMessage = 'Vui lòng đăng nhập để xem lịch hẹn.';
+        errorMessage = 'Lỗi xác thực: Vui lòng đăng nhập lại.';
+        console.warn('[401 ERROR] Missing or invalid authentication. CurrentUser:', {
+          type: loaiNguoiDung,
+          hasMaNguoiDung: maNguoiDungParam !== undefined,
+          maNguoiDungParam,
+          loaiNguoiDungParam
+        });
         this.closeModal();
       } else if (error.status === 403) {
         errorMessage = 'Bạn không có quyền xem danh sách lịch hẹn này.';

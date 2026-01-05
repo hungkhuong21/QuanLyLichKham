@@ -1,0 +1,300 @@
+<div class="page-wrapper">
+  <app-header></app-header>
+
+  <div class="hero-landing">
+    <div class="white-shape"></div>
+    <div class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">Nơi Khởi Nguồn Niềm Tin</h1>
+        <p class="hero-description">
+          Chúng tôi am hiểu những thách thức lớn trong y học và mang đến sự chăm sóc tận tâm cho từng bệnh nhân.
+        </p>
+        <div class="hero-buttons">
+          <a class="btn-primary" routerLink="/register">Đặt lịch ngay</a>
+          <button class="btn-secondary">Tìm hiểu thêm</button>
+        </div>
+      </div>
+      <div class="ambulance-image">
+        <div class="ambulance-placeholder">🚑</div>
+      </div>
+    </div>
+
+    <!-- Appointment Form Overlay -->
+    <div class="appointment-form-overlay">
+      <div class="appointment-form-container">
+        <h2 class="appointment-title">Đặt lịch hẹn</h2>
+        
+        <form class="appointment-form" (ngSubmit)="onAppointmentSubmit()">
+          <div class="form-group">
+            <label for="appointmentName" class="form-label">Tên *</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="appointmentName" 
+              placeholder="Tên đầy đủ *"
+              [(ngModel)]="appointmentName" 
+              name="appointmentName"
+              required 
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="appointmentPhone" class="form-label">Số điện thoại *</label>
+            <input 
+              type="tel" 
+              class="form-control" 
+              id="appointmentPhone" 
+              placeholder="VD: 0912345678"
+              [(ngModel)]="appointmentPhone" 
+              name="appointmentPhone"
+              required 
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="appointmentSpecialty" class="form-label">Chuyên Khoa *</label>
+            <select 
+              class="form-control" 
+              id="appointmentSpecialty"
+              [(ngModel)]="appointmentSpecialty" 
+              name="appointmentSpecialty"
+              (change)="onSpecialtyChange()"
+              required
+            >
+              <option value="" disabled selected>Vui lòng chọn chuyên khoa</option>
+              <option *ngFor="let specialty of specialties" [value]="specialty.id">
+                {{ specialty.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="appointmentDoctor" class="form-label">Bác Sĩ *</label>
+            <select 
+              class="form-control" 
+              id="appointmentDoctor"
+              [(ngModel)]="appointmentDoctor" 
+              name="appointmentDoctor"
+              [disabled]="!appointmentSpecialty || isLoadingDoctors"
+              required
+            >
+              <option value="" disabled selected>
+                {{ isLoadingDoctors ? 'Đang tải...' : (!appointmentSpecialty ? 'Chọn chuyên khoa trước' : 'Vui lòng chọn bác sĩ') }}
+              </option>
+              <option *ngFor="let doctor of filteredDoctors" [value]="doctor.id">
+                {{ doctor.name }} - {{ doctor.specialty }}
+              </option>
+              <option *ngIf="appointmentSpecialty && !isLoadingDoctors && filteredDoctors.length === 0" value="" disabled>
+                Không có bác sĩ nào trong khoa này
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="appointmentTime" class="form-label">Thời gian *</label>
+            <input 
+              type="datetime-local" 
+              class="form-control" 
+              id="appointmentTime"
+              [(ngModel)]="appointmentTime" 
+              name="appointmentTime"
+              [min]="minDateTime"
+              required 
+            />
+            <small class="form-text text-muted" *ngIf="appointmentTime">
+              Thời gian đã chọn: {{ formatDateTime(appointmentTime) }}
+            </small>
+            <small class="form-text text-info" style="display: block; margin-top: 0.25rem; color: #2563eb; font-weight: 500;">
+              ⏰ Giờ làm việc: {{ getWorkingHoursDescription() }}. Nếu đặt lịch hôm nay, vui lòng đặt trước ít nhất 2 giờ.
+            </small>
+          </div>
+
+          <button 
+            type="submit" 
+            class="appointment-button"
+            [disabled]="isSubmittingAppointment"
+          >
+            <span *ngIf="!isSubmittingAppointment">Đặt lịch hẹn</span>
+            <span *ngIf="isSubmittingAppointment">Đang xử lý...</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Doctor Search Section -->
+  <div class="doctor-search-section">
+    <div class="doctor-search-container">
+      <h2 class="doctor-search-title">Tìm Bác Sĩ</h2>
+      <div class="doctor-search-form">
+        <input 
+          type="text" 
+          class="doctor-search-input" 
+          placeholder="Tên bác sĩ"
+          [(ngModel)]="doctorName"
+          name="doctorName"
+          (keyup.enter)="onDoctorSearch()"
+        />
+        <select 
+          class="doctor-search-input" 
+          [(ngModel)]="doctorDepartmentId"
+          name="doctorDepartmentId"
+        >
+          <option value="">Tất cả khoa</option>
+          <option *ngFor="let specialty of specialties" [value]="specialty.id">
+            {{ specialty.name }}
+          </option>
+        </select>
+        <button 
+          class="doctor-search-button" 
+          (click)="onDoctorSearch()"
+          [disabled]="isSearching"
+        >
+          <span *ngIf="!isSearching">Tìm Kiếm</span>
+          <span *ngIf="isSearching">Đang tìm...</span>
+        </button>
+      </div>
+      
+      <!-- Search Results -->
+      <div class="doctor-search-results" *ngIf="hasSearched">
+        <div *ngIf="isSearching" class="search-loading">
+          <p>Đang tìm kiếm bác sĩ</p>
+        </div>
+        
+        <div *ngIf="!isSearching && searchResults.length > 0" class="search-results-list">
+          <h3 class="search-results-title">
+            <span style="font-size: 1.2rem; margin-right: 0.5rem;">🔍</span>
+            Kết quả tìm kiếm: <strong style="color: #2563eb;">{{ searchResults.length }}</strong> bác sĩ
+          </h3>
+          <div class="doctors-grid">
+            <div class="doctor-card" *ngFor="let doctor of searchResults">
+              <div class="doctor-card-header">
+                <h4 class="doctor-card-name">
+                  <span style="font-size: 1.1rem; margin-right: 0.5rem;">👨‍⚕️</span>
+                  {{ doctor.name }}
+                </h4>
+                <span class="doctor-card-status" [class.active]="doctor.status === 'Active'">
+                  {{ doctor.status === 'Active' ? '✓ Đang làm việc' : '✗ Nghỉ phép' }}
+                </span>
+              </div>
+              <div class="doctor-card-body">
+                <p class="doctor-card-specialty" *ngIf="doctor.specialty">
+                  <strong>🎯 Chuyên môn:</strong> 
+                  <span>{{ doctor.specialty }}</span>
+                </p>
+                <p class="doctor-card-department">
+                  <strong>🏥 Khoa:</strong> 
+                  <span *ngFor="let dept of specialties">
+                    <span *ngIf="dept.id === doctor.departmentId">{{ dept.name }}</span>
+                  </span>
+                </p>
+                <p class="doctor-card-phone" *ngIf="doctor.phone">
+                  <strong>📞 Điện thoại:</strong> 
+                  <a [href]="'tel:' + doctor.phone" style="color: #2563eb; text-decoration: none;">{{ doctor.phone }}</a>
+                </p>
+                <p class="doctor-card-email" *ngIf="doctor.email">
+                  <strong>✉️ Email:</strong> 
+                  <a [href]="'mailto:' + doctor.email" style="color: #2563eb; text-decoration: none;">{{ doctor.email }}</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div *ngIf="!isSearching && searchResults.length === 0" class="search-no-results">
+          <p>Không tìm thấy bác sĩ nào phù hợp với tiêu chí tìm kiếm.</p>
+          <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #9ca3af;">
+            Vui lòng thử lại với từ khóa khác hoặc chọn khoa khác.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services Section -->
+  <div class="services-section" id="services">
+    <div class="services-container">
+      <h2 class="services-title">Dịch vụ của chúng tôi cung cấp</h2>
+      <p class="services-description">
+        Chúng tôi mang đến các dịch vụ y tế toàn diện, kết hợp chuyên môn sâu và công nghệ hiện đại để chăm sóc sức khỏe tối ưu cho bạn.
+      </p>
+      <div class="services-grid">
+        <div class="service-card" *ngFor="let service of services">
+          <div class="service-icon">{{ service.image }}</div>
+          <h3 class="service-card-title">{{ service.title }}</h3>
+          <p class="service-card-description">{{ service.description }}</p>
+          <a href="#" class="service-link">Tìm hiểu thêm →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Section -->
+  <div class="contact-section" id="contact">
+    <div class="contact-container">
+      <h2 class="contact-title">Liên Hệ</h2>
+      <p class="contact-description">
+        Chúng tôi luôn sẵn sàng hỗ trợ bạn. Hãy liên hệ với chúng tôi hoặc xem lịch hẹn của bạn.
+      </p>
+      <div class="contact-buttons">
+        <button class="contact-btn contact-btn-primary" (click)="openAppointmentSchedule()">
+          Xem lịch hẹn
+        </button>
+        <button class="contact-btn contact-btn-secondary" (click)="contactNow()">
+          Liên hệ ngay
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointment Schedule Modal -->
+  <app-appointment-schedule 
+    [isOpen]="isAppointmentScheduleOpen" 
+    (closeModalEvent)="closeAppointmentSchedule()">
+  </app-appointment-schedule>
+
+  <!-- Contact Modal -->
+  <div class="contact-modal-overlay" *ngIf="isContactModalOpen" (click)="closeContactModal()">
+    <div class="contact-modal" (click)="$event.stopPropagation()">
+      <button class="contact-modal-close" (click)="closeContactModal()">×</button>
+      <h2 class="contact-modal-title">Thông tin liên hệ</h2>
+      <div class="contact-modal-content">
+        <div class="contact-modal-item">
+          <div class="contact-modal-icon">📞</div>
+          <div class="contact-modal-details">
+            <h3 class="contact-modal-item-title">Hotline</h3>
+            <p class="contact-modal-item-text">1900 1234</p>
+            <button class="contact-modal-action-btn" (click)="openPhoneDialer()">
+              Gọi ngay
+            </button>
+          </div>
+        </div>
+        <div class="contact-modal-item">
+          <div class="contact-modal-icon">📧</div>
+          <div class="contact-modal-details">
+            <h3 class="contact-modal-item-title">Email</h3>
+            <p class="contact-modal-item-text">info&#64;healthcare.com</p>
+            <button class="contact-modal-action-btn" (click)="openEmail()">
+              Gửi email
+            </button>
+          </div>
+        </div>
+        <div class="contact-modal-item">
+          <div class="contact-modal-icon">📍</div>
+          <div class="contact-modal-details">
+            <h3 class="contact-modal-item-title">Địa chỉ</h3>
+            <p class="contact-modal-item-text">123 Đường ABC, Quận 1, TP.HCM</p>
+            <button class="contact-modal-action-btn" (click)="closeContactModal()">
+              Xem bản đồ
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="contact-modal-footer">
+        Chúng tôi luôn sẵn sàng hỗ trợ bạn!
+      </p>
+    </div>
+  </div>
+
+  <app-footer></app-footer>
+</div>
