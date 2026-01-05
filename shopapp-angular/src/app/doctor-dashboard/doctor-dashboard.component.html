@@ -1,0 +1,92 @@
+<div class="doctor-layout">
+  <!-- Main Content (no sidebar, no navbar) -->
+  <main class="doctor-content">
+    <!-- Header / Welcome, Logout at top right -->
+    <header class="dashboard-header"
+      style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+      <h2>Chào mừng, {{ doctorName || '' }}!</h2>
+      <button class="logout-item top-right-logout" type="button" (click)="logout()">🚪 Đăng xuất</button>
+    </header>
+
+    <!-- Statistics Cards -->
+    <section class="stats-cards">
+      <div class="card">
+        <h3>🗓️ Lịch hẹn hôm nay</h3>
+        <p>{{ filteredAppointments.length }}</p>
+      </div>
+      <div class="card">
+        <h3>📅 Lịch khám tiếp theo</h3>
+        <p>10:30</p>
+      </div>
+      <div class="card">
+        <h3>⏰ Lịch làm việc tuần này</h3>
+        <p>5 ngày</p>
+      </div>
+    </section>
+
+    <!-- Patient Table Section -->
+    <section class="table-section">
+      <div class="table-header">
+        <h3>Lịch hẹn của tôi</h3>
+        <div class="search-bar">
+          <select [(ngModel)]="quickFilter" (change)="applyQuickFilter()">
+            <option value="all">Tất cả</option>
+            <option value="today">Hôm nay</option>
+            <option value="week">Tuần này</option>
+            <option value="month">Tháng này</option>
+          </select>
+          <input type="text" placeholder="Tìm theo tên bệnh nhân" [(ngModel)]="searchPatientName" (input)="onSearchInput()" />
+          <input type="text" placeholder="Tìm theo thời gian (yyyy-mm-dd)" [(ngModel)]="searchTime" (input)="onSearchInput()" />
+          <input type="text" placeholder="Trạng thái" [(ngModel)]="searchStatus" (input)="onSearchInput()" />
+          <button type="button" (click)="searchAppointments()">🔍 Tìm kiếm</button>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã</th>
+              <th>Tên bệnh nhân</th>
+              <th>SĐT</th>
+              <th>Khoa</th>
+              <th>Thời gian</th>
+              <th>Trạng thái</th>
+              <th>Ghi chú</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let app of filteredAppointments">
+              <td>{{ app.id }}</td>
+              <td>{{ app.patientName }}</td>
+              <td>{{ app.patientPhone }}</td>
+              <td>{{ app.departmentName }}</td>
+              <td>{{ app.appointmentTime }}</td>
+              <td>{{ app.status }}</td>
+              <td>{{ app.note }}</td>
+              <td>
+                <button class="view-detail-btn" (click)="viewAppointmentDetail(app)">👁️ Chi tiết</button>
+                <button *ngIf="canComplete(app)" class="complete-btn" (click)="completeAppointment(app)">Hoàn thành</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Modal chi tiết lịch hẹn -->
+    <div class="modal-overlay" *ngIf="selectedAppointment">
+      <div class="modal-content">
+        <h2>Chi tiết lịch hẹn</h2>
+        <p><b>Mã:</b> {{ selectedAppointment.id }}</p>
+        <p><b>Tên bệnh nhân:</b> {{ selectedAppointment.patientName }}</p>
+        <p><b>SĐT:</b> {{ selectedAppointment.patientPhone }}</p>
+        <p><b>Khoa:</b> {{ selectedAppointment.departmentName }}</p>
+        <p><b>Thời gian:</b> {{ selectedAppointment.appointmentTime }}</p>
+        <p><b>Trạng thái:</b> {{ selectedAppointment.status }}</p>
+        <p *ngIf="selectedAppointment.note"><b>Ghi chú:</b> {{ selectedAppointment.note }}</p>
+        <button (click)="selectedAppointment=null">Đóng</button>
+      </div>
+    </div>
+  </main>
+</div>
