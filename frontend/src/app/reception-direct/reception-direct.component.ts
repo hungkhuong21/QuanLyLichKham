@@ -98,11 +98,29 @@ export class ReceptionDirectComponent implements OnInit {
       }
     });
   }
-  
+
   onDepartmentChange(): void {
     // Reset doctor selection when department changes
     this.patientForm.doctor = '';
   }
-  
+
+  onSubmit(): void {
+    if (!this.patientForm.fullName || !this.patientForm.dateOfBirth || !this.patientForm.gender || 
+        !this.patientForm.phoneNumber || !this.patientForm.idCard || !this.patientForm.address ||
+        !this.patientForm.department || !this.patientForm.doctor || !this.patientForm.examinationType) {
+      alert('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      return;
+    }
+
+    // Format ngày sinh từ DD/MM/YYYY sang YYYY-MM-DD
+    let formattedDateOfBirth = '';
+    if (this.patientForm.dateOfBirth) {
+      const parts = this.patientForm.dateOfBirth.split('/');
+      if (parts.length === 3) {
+        formattedDateOfBirth = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      } else {
+        formattedDateOfBirth = this.patientForm.dateOfBirth;
+      }
+    }
 
 }
