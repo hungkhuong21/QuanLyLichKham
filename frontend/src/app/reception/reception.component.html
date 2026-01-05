@@ -1,0 +1,136 @@
+<div class="reception-page">
+  <app-header></app-header>
+
+  <!-- Navigation Header -->
+  <div class="reception-nav">
+    <div class="reception-nav-container">
+      <a routerLink="/reception" routerLinkActive="active" class="nav-link-item">Tiếp Nhận Theo Lịch</a>
+      <a routerLink="/reception/direct" routerLinkActive="active" class="nav-link-item">Tiếp Nhận Trực Tiếp</a>
+      <a routerLink="/reception/update-profile" routerLinkActive="active" class="nav-link-item">Cập Nhật Hồ Sơ</a>
+      <a routerLink="/reception/daily-list" routerLinkActive="active" class="nav-link-item">Danh Sách Trong Ngày</a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="reception-main">
+    <div class="reception-container">
+      
+      <!-- Patient Search Section -->
+      <div class="search-section">
+        <div class="search-card">
+          <h2 class="search-title">Bệnh Nhân Đặt Lịch Trước</h2>
+          <form class="search-form" (ngSubmit)="onSearch()">
+            <div class="search-inputs">
+              <div class="form-group">
+                <label for="appointmentId" class="form-label">Mã Lịch Hẹn</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="appointmentId" 
+                  placeholder="Nhập mã lịch hẹn"
+                  [(ngModel)]="searchAppointmentId" 
+                  name="appointmentId"
+                />
+              </div>
+              <div class="form-group">
+                <label for="phoneNumber" class="form-label">Số Điện Thoại</label>
+                <input 
+                  type="tel" 
+                  class="form-control" 
+                  id="phoneNumber" 
+                  placeholder="Nhập số điện thoại"
+                  [(ngModel)]="searchPhoneNumber" 
+                  name="phoneNumber"
+                />
+              </div>
+              <div class="form-group">
+                <label for="idCard" class="form-label">CMND/CCCD</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="idCard" 
+                  placeholder="Nhập CMND/CCCD"
+                  [(ngModel)]="searchIdCard" 
+                  name="idCard"
+                />
+              </div>
+            </div>
+            <button type="submit" class="search-button">Tìm Kiếm</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Appointment Information Section -->
+      <div class="appointment-info-section" *ngIf="foundAppointment">
+        <div class="appointment-info-card">
+          <h2 class="info-title">Thông tin lịch hẹn</h2>
+          
+          <!-- Appointment Information Grid -->
+          <div class="appointment-info-grid">
+            <div class="info-row">
+              <label class="info-label">Mã lịch</label>
+              <div class="info-value">{{ foundAppointment.appointmentId }}</div>
+            </div>
+            <div class="info-row">
+              <label class="info-label">Họ tên</label>
+              <div class="info-value">{{ foundAppointment.fullName }}</div>
+            </div>
+            <div class="info-row">
+              <label class="info-label">Ngày sinh</label>
+              <div class="info-value">{{ foundAppointment.dateOfBirth }}</div>
+            </div>
+            <div class="info-row">
+              <label class="info-label">Giới tính</label>
+              <div class="info-value">{{ foundAppointment.gender }}</div>
+            </div>
+            <div class="info-row">
+              <label class="info-label">Khoa khám</label>
+              <div class="info-value">{{ foundAppointment.department }}</div>
+            </div>
+            <div class="info-row">
+              <label class="info-label">Bác sĩ</label>
+              <div class="info-value">{{ foundAppointment.doctor }}</div>
+            </div>
+            <div class="info-row">
+              <label class="info-label">Giờ khám</label>
+              <div class="info-value">{{ foundAppointment.appointmentTime }}</div>
+            </div>
+            <div class="info-row">
+              <label class="info-label">Trạng thái</label>
+              <div class="info-value status-value" 
+                   [class.status-completed]="foundAppointment.status === 'Hoàn thành'"
+                   [class.status-confirmed]="foundAppointment.status === 'Đã xác nhận'">
+                {{ foundAppointment.status }}
+              </div>
+            </div>
+            <div class="info-row">
+              <label class="info-label">Hành động</label>
+              <div class="info-value action-value">-</div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button 
+              class="action-btn confirm-btn" 
+              (click)="confirmReception()"
+              [disabled]="foundAppointment.status === 'Hoàn thành'"
+              [class.disabled]="foundAppointment.status === 'Hoàn thành'">
+              <span *ngIf="foundAppointment.status !== 'Hoàn thành'">Xác Nhận Tiếp Nhận</span>
+              <span *ngIf="foundAppointment.status === 'Hoàn thành'">✓ Đã Hoàn Thành</span>
+            </button>
+            <button class="action-btn print-btn" (click)="printSlip()">In Phiếu</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!foundAppointment && hasSearched">
+        <p class="empty-message">Không tìm thấy thông tin lịch hẹn. Vui lòng kiểm tra lại thông tin tìm kiếm.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <app-footer></app-footer>
+</div>

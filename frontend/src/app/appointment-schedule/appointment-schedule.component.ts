@@ -155,6 +155,15 @@ loadAppointments(): void {
   
   console.log('🔵 User found, processing...');
   
+  // Lấy LoaiNguoiDung từ user
+  const loaiNguoiDung = currentUser.LoaiNguoiDung ?? currentUser.role;
+  console.log('🔵 LoaiNguoiDung:', loaiNguoiDung);
+  
+  // Kiểm tra xem user có quyền xem tất cả lịch hẹn không (Admin, QuanTriVien, NhanVien)
+  const canViewAll = currentUser.role === 'admin' || 
+                     currentUser.LoaiNguoiDung === 'Admin' || 
+                     currentUser.LoaiNguoiDung === 'QuanTriVien' ||
+                     currentUser.LoaiNguoiDung === 'NhanVien';
   // Lấy LoaiNguoiDung từ user - BẮTBUỘC phải có giá trị
   let loaiNguoiDung = currentUser.LoaiNguoiDung ?? currentUser.role;
   console.log('🔵 LoaiNguoiDung from user:', loaiNguoiDung);
@@ -192,6 +201,7 @@ loadAppointments(): void {
   // - NhanVien: Cần sửa backend để hỗ trợ (tạm thời map sang Admin)
   // - BenhNhan/BacSi: Cần MaNguoiDung để lọc (backend vẫn cần MaNguoiDung)
   let maNguoiDungParam: number | undefined;
+  let loaiNguoiDungParam: string | undefined;
   let loaiNguoiDungParam: string | undefined = loaiNguoiDung; // Initialize with loaiNguoiDung
   
   console.log('🔵 Initial loaiNguoiDungParam:', loaiNguoiDungParam);
@@ -213,6 +223,24 @@ loadAppointments(): void {
     }
   } else if (loaiNguoiDung === 'BenhNhan' || loaiNguoiDung === 'BacSi') {
     // BenhNhan hoặc BacSi: Backend vẫn cần MaNguoiDung để lọc theo MaBenhNhan/MaBacSi
+    // Lấy MaNguoiDung từ user
+    const maNguoiDung = currentUser.MaNguoiDung ?? currentUser.MaTK ?? currentUser.id;
+    
+    if (maNguoiDung !== null && maNguoiDung !== undefined && maNguoiDung !== '') {
+      maNguoiDungParam = Number(maNguoiDung);
+      loaiNguoiDungParam = loaiNguoiDung;
+    } else {
+      console.error('ERROR: BenhNhan/BacSi user but no MaNguoiDung found!', currentUser);
+      alert('Lỗi: Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
+      this.isLoading = false;
+      return;
+    }
+  } else {
+    // Loại người dùng không được hỗ trợ
+    console.error('ERROR: Unsupported user type:', loaiNguoiDung, currentUser);
+    alert('Lỗi: Loại người dùng không được hỗ trợ: ' + loaiNguoiDung);
+    this.isLoading = false;
+    return;
     // Lấy MaNguoiDung từ user - ưu tiên thử tất cả các field có thể chứa ID
     let maNguoiDung = currentUser.MaNguoiDung ?? currentUser.MaTK ?? currentUser.id ?? currentUser.userId;
     
@@ -262,6 +290,7 @@ loadAppointments(): void {
       if (error.error?.error) {
         errorMessage = error.error.error;
       } else if (error.status === 401) {
+        errorMessage = 'Vui lòng đăng nhập để xem lịch hẹn.';
         errorMessage = 'Lỗi xác thực: Vui lòng đăng nhập lại.';
         console.warn('[401 ERROR] Missing or invalid authentication. CurrentUser:', {
           type: loaiNguoiDung,
